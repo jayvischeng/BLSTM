@@ -1,4 +1,0 @@
-baseurl: /home/cheng/Dropbox/IGBB_Imbalanced
-processingfile: Slammer
-window_size: 50
-bagging: 50

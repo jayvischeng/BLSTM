@@ -28,7 +28,7 @@ def Run(B,W,filetype,filename,lstm_size):
 
                 for eachline in fin:
                     if "lstm_size: " in eachline:
-                        #print(eachline)
+                        print(eachline)
                         if  "lstm_size: "+str(lstm_size)+"-" in eachline:
                             is_line_value = 0
                             flag = 1
@@ -66,7 +66,6 @@ def Run(B,W,filetype,filename,lstm_size):
             ac_negative = 0
             predict_list = []
             Final_Precit = []
-
             for tab1 in range(len(Predict[0])):
                 predict_list.append([])
                 for tab2 in range(len(Predict)):
@@ -145,22 +144,28 @@ def Return_Evaluation(B,W,filetype,filename,lstm_size_list):
     #print("The f1_score result is: "+str(round(f1_score_max,5))+"%")
     #print("The MAX Index is: "+str(auc_list.index(auc_max)))
 
-    return ACC_R_max,ACC_A_max,ACC_max,auc_max,g_mean_max,f1_score_max
+    return ACC_R_max,ACC_A_max,ACC_max,auc_max,g_mean_max,f1_score_max,lstm_size_list[auc_list.index(auc_max)]
 if __name__=='__main__':
 
 
     filetype = "MultiEvent_Keras"
-    bagging_label_list = [50,100,150,200,250]
-    window_size_list = [10,30,50]
-    filename = "Nimda"
+    #bagging_label_list = [50,100,150,200,250]
+    bagging_label_list = [1]
+    #window_size_list = [10,30,50]
+    window_size_list = [30]
+    filename = "B_Slammer"
     ACC_R_L = []
     ACC_A_L = []
     ACC_L = []
     auc_L = []
     g_mean_L = []
     f1_score_L = []
-    lstm_size_list = [i for i in range(10,41,10)]
-
+    #lstm_size_list = [i for i in range(10,101,5)]
+    lstm_size_list = [i for i in range(10,60,5)]
+    lstm_size_list.append(70)
+    lstm_size_list.append(80)
+    lstm_size_list.append(90)
+    lstm_size_list.append(100)
     for tab1 in range(len(bagging_label_list)):
         B = bagging_label_list[tab1]
         print("--------------------------------------------------------------------------------------Bagging Size is :"+str(B))
@@ -174,7 +179,7 @@ if __name__=='__main__':
             W = window_size_list[tab2]
             print("---------------------------------------------------------Window Size is :"+str(W))
 
-            ACC_R_max,ACC_A_max,ACC_max,auc_max,g_mean_max,f1_score_max = Return_Evaluation(B,W,filetype,filename,lstm_size_list)
+            ACC_R_max,ACC_A_max,ACC_max,auc_max,g_mean_max,f1_score_max,lstm_best = Return_Evaluation(B,W,filetype,filename,lstm_size_list)
 
             ACC_R_L[tab1].append(ACC_R_max)
             ACC_A_L[tab1].append(ACC_A_max)
@@ -197,6 +202,7 @@ if __name__=='__main__':
         auc_L[tab1]=auc_L_Max
         g_mean_L[tab1]=g_mean_L_Max
         f1_score_L[tab1]=f1_score_L_Max
+        print("The best Lstm Size is "+str(lstm_best))
     print("///////////////////////////////////////////////////////////////////////////////////////////////////")
     print(ACC_R_L)
     print(ACC_A_L)

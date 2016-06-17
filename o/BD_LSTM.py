@@ -1,24 +1,11 @@
-'''Trains a LSTM on the IMDB sentiment classification task.
-
-The dataset is actually too small for LSTM to be of any advantage
-compared to simpler, much faster methods such as TF-IDF+LogReg.
-
-Notes:
-
-- RNNs are tricky. Choice of batch size is important,
-choice of loss and optimizer is critical, etc.
-Some configurations won't converge.
-
-- LSTM loss decrease patterns during training can be quite different
-from what you see with CNNs/MLPs/etc.
-'''
-
 from __future__ import print_function
 import numpy as np
 np.random.seed(1337)  # for reproducibility
 import sys
 import os
-import random as RANDOM
+import time
+start = time.time()
+
 from sklearn import svm,datasets,preprocessing,linear_model
 from sklearn.metrics import roc_auc_score
 from keras.preprocessing import sequence
@@ -57,7 +44,7 @@ def LoadData(input_data_path,filename):
     np.random.shuffle(Data)
     return Data
     """
-    global positive_sign,negative_sign,count_positive,count_negative,out_put_path,modified_negative,modified_positivei
+    global positive_sign,negative_sign,modified_negative,modified_positive
     with open(os.path.join(input_data_path,filename)) as fin:
         if filename == 'sonar.dat':
             negative_flag = 'M'
@@ -98,10 +85,8 @@ def LoadData(input_data_path,filename):
                 #print(each)
                 if val[-1].strip()== negative_flag:
                     val[-1]=modified_negative
-                    count_negative += 1
                 else:
                     val[-1]= modified_positive
-                    count_positive += 1
                 try:
                     val=map(lambda a:float(a),val)
                 except:
@@ -169,38 +154,63 @@ def Convergge(X_Training,Y_Training,time_scale_size):
             TEMP_XData[tab1].append(list(TEMP_Value[0]))
     return  np.array(TEMP_XData),Y_Training
 
-def Main(base_url,eachfile,bagging_number,window_size,lstm_size,bagging_label,time_scale_size):
-
+def Main(base_url,eachfile,window_size,lstm_size,time_scale_size):
+    np.random.seed(1337)  # for reproducibility
     global positive_sign,negative_sign,count_positive,count_negative,input_data_path_training,input_data_path_testing,out_put_path,modified_positive,modified_negative
+    Data_=LoadData(input_data_path,eachfile)
+    cross_folder = 2
+    Pos_Data=Data_[Data_[:,-1]==positive_sign]
+    Neg_Data=Data_[Data_[:,-1]==negative_sign]
+    PositiveIndex = returnPositiveIndex(Data_,positive_sign)
+    NegativeIndex = returnNegativeIndex(Data_,negative_sign)
+    for tab_cross in range(cross_folder):
+        print(str(tab_cross+1)+"th cross validation is running......")
+        Positive_Data_Index_Training=[]
+        Positive_Data_Index_Testing=[]
+        Negative_Data_Index_Training=[]
+        Negative_Data_Index_Testing=[]
 
-    if eachfile == "B_Code_Red_I.txt":
-        Training_Data = LoadData(input_data_path_training,"B_N_S_Training.txt")
-    elif eachfile == "B_Nimda.txt":
-        Training_Data = LoadData(input_data_path_training,"B_C_S_Training.txt")
-    elif eachfile == "B_Slammer.txt":
-        Training_Data = LoadData(input_data_path_training,"B_C_N_Training.txt")
-    Testing_Data=LoadData(input_data_path,eachfile)
+        for tab_positive in range(len(PositiveIndex)):
+            if int((cross_folder-tab_cross-1)*len(Pos_Data)/cross_folder)<=tab_positive<int((cross_folder-tab_cross)*len(Pos_Data)/cross_folder):
+                Positive_Data_Index_Testing.append(PositiveIndex[tab_positive])
+            else:
+                Positive_Data_Index_Training.append(PositiveIndex[tab_positive])
+        for tab_negative in range(len(NegativeIndex)):
+            if int((cross_folder-tab_cross-1)*len(Neg_Data)/cross_folder)<=tab_negative<int((cross_folder-tab_cross)*len(Neg_Data)/cross_folder):
+                Negative_Data_Index_Testing.append(NegativeIndex[tab_negative])
+            else:
+                Negative_Data_Index_Training.append(NegativeIndex[tab_negative])
 
-    Positive_Data=Training_Data[Training_Data[:,-1]==modified_positive]
-    Negative_Data=Training_Data[Training_Data[:,-1]==negative_sign]
+        Training_Data_Index=np.append(Negative_Data_Index_Training,Positive_Data_Index_Training,axis=0)
+        Training_Data_Index.sort()
+        Training_Data = Data_[Training_Data_Index,:]
 
-    print("IR is :"+str(float(len(Negative_Data))/len(Positive_Data)))
+        Testing_Data_Index=np.append(Negative_Data_Index_Testing,Positive_Data_Index_Testing,axis=0)
+        Testing_Data_Index.sort()
+        Testing_Data = Data_[Testing_Data_Index,:]
 
-    outputpath = os.path.join(base_url,"MultiEvent_Keras_B_"+str(bagging_label)+"_W_"+str(window_size))
-    if not os.path.isdir(outputpath):
-        os.makedirs(outputpath)
-    outfutfilename1 = os.path.join(outputpath,"True_Label_"+"for_"+eachfile)
 
-    print("bagging_number is "+str(bagging_number)+"----------")
-    for t in range(1):
-        np.random.seed(1337)  # for reproducibility
+        positive_=Training_Data[Training_Data[:,-1]==positive_sign]
+        negative_=Training_Data[Training_Data[:,-1]==negative_sign]
+        print("IR is :"+str(float(len(negative_))/len(positive_)))
+
+        outputpath = os.path.join(base_url,"MultiEvent_Keras_B_"+str(bagging_label)+"_W_"+str(window_size))
+        if not os.path.isdir(outputpath):
+            os.makedirs(outputpath)
+        outfutfilename1 = os.path.join(outputpath,"True_Label_"+"for_"+eachfile)
+
+
+
+
         X_Training=Training_Data[:,:-1]
         Y_Training=Training_Data[:,-1]
 
         X_Testing=Testing_Data[:,:-1]
         Y_Testing=Testing_Data[:,-1]
 
-        scaler = preprocessing.StandardScaler()
+        scaler = preprocessing.Normalizer()
+
+
         batch_size = 200
         (X_Training,Y_Training) = reConstruction(window_size,scaler.fit_transform(X_Training),Y_Training)
         (X_Testing,Y_Testing) = reConstruction(window_size,scaler.fit_transform(X_Testing),Y_Testing)
@@ -226,56 +236,45 @@ def Main(base_url,eachfile,bagging_number,window_size,lstm_size,bagging_label,ti
         outfutfilename2 = os.path.join(outputpath,"Bagging_Predict_"+"for_"+eachfile)
 
         with open(outfutfilename2,"a")as fout:
-            fout.write("----------bagging_: "+str(bagging_number)+"th"+" window size: "+str(window_size)+" lstm_size: "+str(lstm_size)+"----------\n")
+            fout.write(" window size: "+str(window_size)+" lstm_size: "+str(lstm_size)+"----------\n")
             np.savetxt(fout,TempList)
 
 
 if __name__=="__main__":
-    global positive_sign,negative_sign,count_positive,count_negative,input_data_path_training,input_data_path_testing,out_put_path,modified_positive,modified_negative
+    global positive_sign,negative_sign,input_data_path,output_data_path,modified_positive
+
     positive_sign=-1
     negative_sign=1
     modified_positive = 0
-    modified_negative = 1
-    count_positive=0
-    count_negative=0
 
-    with open("Setting.txt")as fin:
-        vallist = fin.readlines()
-        baseurl, base_url = vallist[0].split(":")
-        #windowsize,  window_size = vallist[2].split(":")
-        #bagging, bagging_label= vallist[3].split(":")
-
-    #base_url = base_url.strip()
-    base_url = "/Users/chengmin/Dropbox/BLSTM"
-    #base_url = "/home/grads/mcheng223/IGBB_Imbalanced"
-    input_data_path = os.path.join(base_url,"MultiEvent")
-    input_data_path_training =os.path.join(input_data_path,"Training")
-    input_data_path_testing =input_data_path
+    input_data_path = os.getcwd()
 
     filenamelist=filter(lambda a:os.path.isfile(os.path.join(input_data_path,a)),os.listdir(input_data_path_testing))
 
-    #total_args = list(sys.argv)
-    #total_args.pop(0)
+    time_scale_size_list = [1,2,3,5,6,10,15,30]
+    window_size_list = [10,30]
 
-    #processing_file = 'B_'+str(total_args[0])+".txt"
-    processing_file = "B_Slammer.txt"
-
-    print("Start________________________on TESTING___**************:"+processing_file)
-
-    #window_size = int(total_args[1])
-    window_size = 30
-    #bagging_label = int(total_args[2])
     bagging_label = 1
-    #lstm_size = int(total_args[3])
     lstm_size_list = [10,15,20,25,30,35,40,45,50,55,60,70,80,90,100]
-    #bagging_number = int(total_args[4])
-    bagging_number = 1
     time_scale_size = 1
-    #bagging_number = 1
-    #bagging_label = 50
-    #window_size = 30
-    for lstm_size in lstm_size_list:
-        Main(base_url,processing_file,bagging_number,window_size,lstm_size,bagging_label,time_scale_size)
+   for eachfile in filenamelist:
+        #if  not eachfile=='B_Slammer.txt':continue
+        if '.py' in eachfile or '.DS_' in eachfile: continue
+        if '.txt' in eachfile:
+            pass
+        else:
+            continue
+
+        for window_size in window_size_list:
+            for time_scale_size in time_scale_size_list:
+                output_data_path = os.path.join(os.getcwd(),'Window_Size_'+str(window_size)+"_Time_Scale_"+str(time_scale_size))
+                if not os.path.isdir(output_data_path):
+                    os.makedirs(output_data_path)
+                for lstm_size in lstm_size_list:
+                    Main(input_data_path,processing_file,bagging_number,window_size,lstm_size,bagging_label,time_scale_size)
+
+print(time.time()-start)
+
 
 
 """
