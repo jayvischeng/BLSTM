@@ -175,15 +175,14 @@ def Main(Method_Dict,filename,window_size_label,window_size=0,time_scale_size=0)
     Temp_SubFeature_ACC_list = {}
     Temp_SubFeature_F1_list = {}
     for eachMethod,methodLabel in Method_Dict.items():
-        print(eachMethod+" is running...")
-
         Auc_list[eachMethod] = []
         ACC_R_list[eachMethod] = []
         ACC_A_list[eachMethod] = []
         G_mean_list[eachMethod] = []
         ACC_list[eachMethod] = []
         F1_list[eachMethod] = []
-
+    for eachMethod,methodLabel in Method_Dict.items():
+        print(eachMethod+" is running...")
         Top_K_List = []
         Total_Dimensions = len(Data_[0])-1
 
@@ -243,7 +242,9 @@ def Main(Method_Dict,filename,window_size_label,window_size=0,time_scale_size=0)
                     Testing_Data_Index.sort()
                     Testing_Data = Data_[Testing_Data_Index,:]
                     print(str(tab_cross+1)+"th Cross Validation is running and the training size is "+str(len(Training_Data))+", testing size is "+str(len(Testing_Data))+"......")
-
+                    #positive_=Training_Data[Training_Data[:,-1]==positive_sign]
+                    #negative_=Training_Data[Training_Data[:,-1]==negative_sign]
+                    #print("IR000000000000000000000 is :"+str(float(len(negative_))/len(positive_)))
                     if methodLabel!= 0 and window_size_label == "true":
                         (X_Testing0, Y_Testing0) = reConstruction(window_size, Testing_Data[:,:-1], Testing_Data[:,-1])
                         (X_Training0, Y_Training0) = reConstruction(window_size, Training_Data[:,:-1],Training_Data[:,-1])
@@ -262,33 +263,38 @@ def Main(Method_Dict,filename,window_size_label,window_size=0,time_scale_size=0)
 
                         X_Training = scaler.fit_transform(X_Training)
                         X_Testing = scaler.fit_transform(X_Testing)
-                    print(str(tab_cross+1)+"th cross validation is running and the training size is "+str(len(X_Training))+", testing size is "+str(len(X_Testing))+"......")
+                    #print(str(tab_cross+1)+"th cross validation is running and the training size is "+str(len(X_Training))+", testing size is "+str(len(X_Testing))+"......")
 
                     positive_=Training_Data[Training_Data[:,-1]==positive_sign]
                     negative_=Training_Data[Training_Data[:,-1]==negative_sign]
                     #print("IR is :"+str(float(len(negative_))/len(positive_)))
                     lstm_size = 30
-                    if methodLabel == 0 :
+                    if methodLabel == 0 and window_size_label == "true":
                         np.random.seed(1337)  # for reproducibility
                         batch_size = 200
                         (X_Training,Y_Training) = reConstruction(window_size,scaler.fit_transform(X_Training),Y_Training)
                         (X_Testing,Y_Testing) = reConstruction(window_size,scaler.fit_transform(X_Testing),Y_Testing)
 
-                        lstm_object = LSTM(lstm_size,input_length=window_size,input_dim=33)
-                        print('Build model...'+'Window Size is '+str(window_size)+' LSTM Size is '+str(lstm_size))
+
+                        X_Training,Y_Training = Convergge(X_Training,Y_Training,time_scale_size)
+                        X_Testing,Y_Testing = Convergge(X_Testing,Y_Testing,time_scale_size)
+                        print(X_Training.shape)
+                        lstm_object = LSTM(lstm_size,input_length=len(X_Training[0]),input_dim=33)
+                        print('Build model...'+'Window Size is '+str(window_size)+' LSTM Size is '+str(lstm_size) + " Time Scale is "+ str(time_scale_size))
                         model = Sequential()
+
                         model.add(lstm_object)#X.shape is (samples, timesteps, dimension)
                         model.add(Dense(output_dim=1))
                         model.add(Activation("sigmoid"))
                         model.compile( optimizer='adam',loss='binary_crossentropy',metrics=['accuracy'])
 
-                        X_Training,Y_Training = Convergge(X_Training,Y_Training,time_scale_size)
-                        X_Testing,Y_Testing = Convergge(X_Testing,Y_Testing,time_scale_size)
-                        print(X_Training.shape)
-                        model.fit(X_Training, Y_Training, batch_size=batch_size,nb_epoch=5)
 
+                        model.fit(X_Training, Y_Training, batch_size=batch_size,nb_epoch=20)
                         result = model.predict(X_Testing,batch_size=batch_size)
+
+                        del model
                     else:
+                        print('Window Size is '+str(window_size)+ " Time Scale is "+ str(time_scale_size))
                         if methodLabel==1:
                             #clf = GradientBoostingClassifier(loss='deviance',n_estimators=300, learning_rate=0.1,max_depth=2)
                             clf = AdaBoostClassifier()
@@ -317,7 +323,6 @@ def Main(Method_Dict,filename,window_size_label,window_size=0,time_scale_size=0)
                             ac_positive += 1
                         if Output[tab]==negative_sign and Output[tab]==int(Y_Testing[tab]):
                             ac_negative += 1
-
                     ACC_R = float(ac_negative)/Output.count(negative_sign)
                     ACC_A = float(ac_positive)/Output.count(positive_sign)
                     auc = roc_auc_score(Y_Testing,Output)
@@ -421,21 +426,22 @@ def Main(Method_Dict,filename,window_size_label,window_size=0,time_scale_size=0)
 
 
 
-        Write_Out(output_data_path,filename,ACC_R_list,"ACC_Regular")
-        Write_Out(output_data_path,filename,ACC_A_list,"ACC_Anomaly")
-        Write_Out(output_data_path,filename,Temp_SubFeature_ACC_R_list,"SubFeature_ACC_Regular",Deviation_ACC_R_list)
-        Write_Out(output_data_path,filename,Temp_SubFeature_ACC_A_list,"SubFeature_ACC_Anomaly",Deviation_ACC_A_list)
-        Write_Out(output_data_path,filename,Auc_list,"Auc")
-        Write_Out(output_data_path,filename,Temp_SubFeature_Auc_list,"SubFeature_Auc",Deviation_Auc_list)
-        Write_Out(output_data_path,filename,G_mean_list,"G_mean")
-        Write_Out(output_data_path,filename,Temp_SubFeature_G_mean_list,"SubFeature_G_mean",Deviation_G_mean_list)
-        Write_Out(output_data_path,filename,ACC_list,"ACC")
-        Write_Out(output_data_path,filename,Temp_SubFeature_ACC_list,"SubFeature_ACC",Deviation_ACC_list)
-        Write_Out(output_data_path,filename,F1_list,"F1_score")
-        Write_Out(output_data_path,filename,Temp_SubFeature_F1_list,"SubFeature_F1_score",Deviation_F1_list)
+    Write_Out(output_data_path,filename,time_scale_size,ACC_R_list,"ACC_Regular")
+    Write_Out(output_data_path,filename,time_scale_size,ACC_A_list,"ACC_Anomaly")
+    #Write_Out(output_data_path,filename,time_scale_size,Temp_SubFeature_ACC_R_list,"SubFeature_ACC_Regular",Deviation_ACC_R_list)
+    #Write_Out(output_data_path,filename,time_scale_size,Temp_SubFeature_ACC_A_list,"SubFeature_ACC_Anomaly",Deviation_ACC_A_list)
+    Write_Out(output_data_path,filename,time_scale_size,Auc_list,"Auc")
+    #Write_Out(output_data_path,filename,time_scale_size,Temp_SubFeature_Auc_list,"SubFeature_Auc",Deviation_Auc_list)
+    Write_Out(output_data_path,filename,time_scale_size,G_mean_list,"G_mean")
+    #Write_Out(output_data_path,filename,time_scale_size,Temp_SubFeature_G_mean_list,"SubFeature_G_mean",Deviation_G_mean_list)
+    Write_Out(output_data_path,filename,time_scale_size,ACC_list,"ACC")
+    #Write_Out(output_data_path,filename,time_scale_size,Temp_SubFeature_ACC_list,"SubFeature_ACC",Deviation_ACC_list)
+    Write_Out(output_data_path,filename,time_scale_size,F1_list,"F1_score")
+    #Write_Out(output_data_path,filename,time_scale_size,Temp_SubFeature_F1_list,"SubFeature_F1_score",Deviation_F1_list)
 
-def Write_Out(filefolderpath,filename,Result_List,Tag,Result_List_back=[]):
-    with open(os.path.join(filefolderpath,filename+"Info_"+Tag+"_List.txt"),"w")as fout:
+def Write_Out(filefolderpath,filename,time_scale_size,Result_List,Tag,Result_List_back=[]):
+    with open(os.path.join(filefolderpath,filename.split('.')[0]+"_Info_"+Tag+"_List.txt"),"a")as fout:
+        fout.write("-----------(time scale: "+str(time_scale_size)+ ")-----------------\n")
         for eachk,eachv in Result_List.items():
             fout.write(eachk)
             fout.write(":\t\t")
@@ -464,28 +470,28 @@ if __name__=='__main__':
     input_data_path =os.getcwd()
 
     window_size_label_list = ['true','false']
-    window_size_list = [30]
+    window_size_list = [50]
 
     filenamelist=os.listdir(input_data_path)
 
-    Method_Dict={"AdaBoost":1,"LSTM":0}
-    #Method_Dict={"AdaBoost":1,"DT":2,"SVM":3,"LR":4,"KNN":5}
+    #Method_Dict={"AdaBoost":1}
+    Method_Dict={"LSTM":0,"AdaBoost":1,"DT":2,"SVM":3,"LR":4,"KNN":5}
 
     for eachfile in filenamelist:
-        #if  not eachfile=='B_Slammer.txt':continue
+        if  not eachfile=='B_C_N_S.txt':continue
         if '.py' in eachfile or '.DS_' in eachfile: continue
         if '.txt' in eachfile:
             pass
         else:
             continue
-        print(eachfile+ " is processing------------------------------------------------------- ")
+        print(eachfile+ " is processing--------------------------------------------------------------------------------------------- ")
         for window_size_label in window_size_label_list:
             if window_size_label == 'true':
 
                 for window_size in window_size_list:
                     time_scale_size_list = get_all_subfactors(window_size)
                     for time_scale_size in time_scale_size_list:
-                        output_data_path = os.path.join(os.getcwd(),'Window_Size_'+str(window_size)+"_Time_Scale_"+str(time_scale_size))
+                        output_data_path = os.path.join(os.getcwd(),'Window_Size_'+str(window_size))
                         if not os.path.isdir(output_data_path):
                             os.makedirs(output_data_path)
                         Main(Method_Dict,eachfile,window_size_label,window_size,time_scale_size)
