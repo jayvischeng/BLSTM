@@ -245,16 +245,54 @@ def Main(Method_Dict,filename,window_size_label,window_size=0,time_scale_size=0)
                     #positive_=Training_Data[Training_Data[:,-1]==positive_sign]
                     #negative_=Training_Data[Training_Data[:,-1]==negative_sign]
                     #print("IR000000000000000000000 is :"+str(float(len(negative_))/len(positive_)))
-                    if methodLabel!= 0 and window_size_label == "true":
-                        (X_Testing0, Y_Testing0) = reConstruction(window_size, Testing_Data[:,:-1], Testing_Data[:,-1])
-                        (X_Training0, Y_Training0) = reConstruction(window_size, Training_Data[:,:-1],Training_Data[:,-1])
-                        X_Training,Y_Training = Manipulation(X_Training0,Y_Training0,time_scale_size)
-                        X_Testing,Y_Testing = Manipulation(X_Testing0,Y_Testing0,time_scale_size)
+                    if window_size_label == "true":
+                        if methodLabel == 0:
+                            np.random.seed(1337)  # for reproducibility
+                            batch_size = 200
+                            (X_Training_1, Y_Training_1) = reConstruction(window_size, scaler.fit_transform(Training_Data[:,:-1]),Training_Data[:,-1])
+                            (X_Testing_1, Y_Testing_1) = reConstruction(window_size, scaler.fit_transform(Testing_Data[:,:-1]),Testing_Data[:,-1])
 
-                        Training_Data = np.append(X_Training,Y_Training.reshape(len(Y_Training),1),axis=1)
+                            X_Training, Y_Training = Convergge(X_Training_1, Y_Training_1, time_scale_size)
+                            X_Testing, Y_Testing = Convergge(X_Testing_1, Y_Testing_1, time_scale_size)
+                            print(X_Training.shape)
+                            lstm_object = LSTM(lstm_size, input_length=len(X_Training[0]), input_dim=33)
+                            print('Build model...' + 'Window Size is ' + str(window_size) + ' LSTM Size is ' + str(
+                                lstm_size) + " Time Scale is " + str(time_scale_size))
+                            model = Sequential()
 
-                        X_Training = scaler.fit_transform(X_Training)
-                        X_Testing = scaler.fit_transform(X_Testing)
+                            model.add(lstm_object)  # X.shape is (samples, timesteps, dimension)
+                            model.add(Dense(output_dim=1))
+                            model.add(Activation("sigmoid"))
+                            model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
+
+                            model.fit(X_Training, Y_Training, batch_size=batch_size, nb_epoch=20)
+                            result = model.predict(X_Testing, batch_size=batch_size)
+
+                            del model
+                        else:
+                            (X_Training_1, Y_Training_1) = reConstruction(window_size, scaler.fit_transform(Training_Data[:,:-1]),Training_Data[:,-1])
+                            (X_Testing_1, Y_Testing_1) = reConstruction(window_size, scaler.fit_transform(Testing_Data[:,:-1]), Testing_Data[:,-1])
+                            X_Training,Y_Training = Manipulation(X_Training_1,Y_Training_1,time_scale_size)
+                            X_Testing,Y_Testing = Manipulation(X_Testing_1,Y_Testing_1,time_scale_size)
+
+                            X_Training = scaler.fit_transform(X_Training)
+                            X_Testing = scaler.fit_transform(X_Testing)
+
+                            print('Window Size is ' + str(window_size) + " Time Scale is " + str(time_scale_size))
+                            if methodLabel == 1:
+                                # clf = GradientBoostingClassifier(loss='deviance',n_estimators=300, learning_rate=0.1,max_depth=2)
+                                clf = AdaBoostClassifier()
+                            elif methodLabel == 2:
+                                clf = tree.DecisionTreeClassifier()
+                            elif methodLabel == 3:
+                                clf = svm.SVC(kernel="rbf", gamma=0.001, C=1000)
+                            elif methodLabel == 4:
+                                clf = linear_model.LogisticRegression()
+                            elif methodLabel == 5:
+                                clf = KNeighborsClassifier(3)
+
+                            clf.fit(X_Training, Y_Training)
+                            result = clf.predict(X_Testing)
                     else:
                         X_Training = Training_Data[:,:-1]
                         Y_Training = Training_Data[:,-1]
@@ -263,52 +301,26 @@ def Main(Method_Dict,filename,window_size_label,window_size=0,time_scale_size=0)
 
                         X_Training = scaler.fit_transform(X_Training)
                         X_Testing = scaler.fit_transform(X_Testing)
-                    #print(str(tab_cross+1)+"th cross validation is running and the training size is "+str(len(X_Training))+", testing size is "+str(len(X_Testing))+"......")
 
-                    positive_=Training_Data[Training_Data[:,-1]==positive_sign]
-                    negative_=Training_Data[Training_Data[:,-1]==negative_sign]
+                        if methodLabel == 1:
+                            # clf = GradientBoostingClassifier(loss='deviance',n_estimators=300, learning_rate=0.1,max_depth=2)
+                            clf = AdaBoostClassifier()
+                        elif methodLabel == 2:
+                            clf = tree.DecisionTreeClassifier()
+                        elif methodLabel == 3:
+                            clf = svm.SVC(kernel="rbf", gamma=0.001, C=1000)
+                        elif methodLabel == 4:
+                            clf = linear_model.LogisticRegression()
+                        elif methodLabel == 5:
+                            clf = KNeighborsClassifier(3)
+                    #print(str(tab_cross+1)+"th cross validation is running and the training size is "+str(len(X_Training))+", testing size is "+str(len(X_Testing))+"......")
+                        clf.fit(X_Training, Y_Training)
+                        result = clf.predict(X_Testing)
+                    #positive_=Training_Data[Training_Data[:,-1]==positive_sign]
+                    #negative_=Training_Data[Training_Data[:,-1]==negative_sign]
                     #print("IR is :"+str(float(len(negative_))/len(positive_)))
                     lstm_size = 30
-                    if methodLabel == 0 and window_size_label == "true":
-                        np.random.seed(1337)  # for reproducibility
-                        batch_size = 200
-                        (X_Training,Y_Training) = reConstruction(window_size,scaler.fit_transform(X_Training),Y_Training)
-                        (X_Testing,Y_Testing) = reConstruction(window_size,scaler.fit_transform(X_Testing),Y_Testing)
 
-
-                        X_Training,Y_Training = Convergge(X_Training,Y_Training,time_scale_size)
-                        X_Testing,Y_Testing = Convergge(X_Testing,Y_Testing,time_scale_size)
-                        print(X_Training.shape)
-                        lstm_object = LSTM(lstm_size,input_length=len(X_Training[0]),input_dim=33)
-                        print('Build model...'+'Window Size is '+str(window_size)+' LSTM Size is '+str(lstm_size) + " Time Scale is "+ str(time_scale_size))
-                        model = Sequential()
-
-                        model.add(lstm_object)#X.shape is (samples, timesteps, dimension)
-                        model.add(Dense(output_dim=1))
-                        model.add(Activation("sigmoid"))
-                        model.compile( optimizer='adam',loss='binary_crossentropy',metrics=['accuracy'])
-
-
-                        model.fit(X_Training, Y_Training, batch_size=batch_size,nb_epoch=20)
-                        result = model.predict(X_Testing,batch_size=batch_size)
-
-                        del model
-                    else:
-                        print('Window Size is '+str(window_size)+ " Time Scale is "+ str(time_scale_size))
-                        if methodLabel==1:
-                            #clf = GradientBoostingClassifier(loss='deviance',n_estimators=300, learning_rate=0.1,max_depth=2)
-                            clf = AdaBoostClassifier()
-                        elif methodLabel==2:
-                            clf=tree.DecisionTreeClassifier()
-                        elif methodLabel==3:
-                            clf = svm.SVC(kernel="rbf", gamma=0.001,C=1000)
-                        elif methodLabel==4:
-                            clf = linear_model.LogisticRegression()
-                        elif methodLabel==5:
-                            clf = KNeighborsClassifier(3)
-
-                        clf.fit(X_Training,Y_Training)
-                        result=clf.predict(X_Testing)
 
                     Output=[]
                     if len(result)==len(Y_Testing):
@@ -445,7 +457,6 @@ def Main(Method_Dict,filename,window_size_label,window_size=0,time_scale_size=0)
     #Write_Out(output_data_path,filename,time_scale_size,Temp_SubFeature_ACC_list,"SubFeature_ACC",Deviation_ACC_list)
     Write_Out(output_data_path,filename,time_scale_size,F1_list,"F1_score")
     #Write_Out(output_data_path,filename,time_scale_size,Temp_SubFeature_F1_list,"SubFeature_F1_score",Deviation_F1_list)
-
 def Write_Out(filefolderpath,filename,time_scale_size,Result_List,Tag,Result_List_back=[]):
     with open(os.path.join(filefolderpath,filename.split('.')[0]+"_Info_"+Tag+"_List.txt"),"a")as fout:
         fout.write("-----------(time scale: "+str(time_scale_size)+ ")-----------------\n")
@@ -478,10 +489,10 @@ if __name__=='__main__':
 
     window_size_label_list = ['true','false']
     window_size_list = [10,20,30,40,50,60]
-
+    #window_size_list = [5]
     filenamelist=os.listdir(input_data_path)
 
-    #Method_Dict={"AdaBoost":1}
+    #Method_Dict={"LSTM":0}
     Method_Dict={"LSTM":0,"AdaBoost":1,"DT":2,"SVM":3,"LR":4,"KNN":5}
 
     for eachfile in filenamelist:
@@ -494,7 +505,7 @@ if __name__=='__main__':
         print(eachfile+ " is processing--------------------------------------------------------------------------------------------- ")
         for window_size_label in window_size_label_list:
             if window_size_label == 'true':
-
+                Method_Dict = {"LSTM": 0, "AdaBoost": 1, "DT": 2, "SVM": 3, "LR": 4, "KNN": 5}
                 for window_size in window_size_list:
                     time_scale_size_list = get_all_subfactors(window_size)
                     for time_scale_size in time_scale_size_list:
@@ -504,6 +515,7 @@ if __name__=='__main__':
                         Main(Method_Dict,eachfile,window_size_label,window_size,time_scale_size)
 
             else:
+                Method_Dict = {"AdaBoost": 1, "DT": 2, "SVM": 3, "LR": 4, "KNN": 5}
                 output_data_path = os.path.join(os.getcwd(),'Traditional')
                 if not os.path.isdir(output_data_path):
                     os.makedirs(output_data_path)

@@ -82,8 +82,8 @@ def Main(filename,window_size_list,Evaluation_List):
 
 if __name__=='__main__':
 
-    filename = "B_C_N_S"
-    window_size_list = [10,20,30,40,50,60]
+    filename = "B_Nimda"
+    window_size_list = [10,20,30,40,50]
     Evaluation_List = ["ACC_R","ACC_A","ACC_L","Auc","G_mean","F1_score"]
 
     #color_list = ['r','g','b','c','m','y']
@@ -112,7 +112,7 @@ if __name__=='__main__':
                 plt.annotate('('+str(txt)+')', xy=(X[i],Y[i]),xycoords='data',xytext=(X[i],Y[i]),size = 10)
 
             plt.xlim(10,70)
-            plt.ylim(75,95)
+            plt.ylim(75,100)
             plt.grid()
             #plt.tight_layout()
             legend = plt.legend(bbox_to_anchor=(0., 1.02, 1., .102),loc='center right', ncol=3, mode="expand", borderaxespad=0.)
