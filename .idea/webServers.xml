@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="WebServers">
+    <option name="servers">
+      <webServer id="4ff6558f-41ee-433d-9fd7-09448fc0da28" name="ubt16a.cs.cityu.edu.hk" url="http://ubt16a.cs.cityu.edu.hk">
+        <fileTransfer host="ubt16a.cs.cityu.edu.hk" port="22" accessType="SFTP" password="dfe9dfc2dfcfdfc4dfcddfe7dfc3dfc4df9cdf99df9cdf9edf92df93" username="mcheng223">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" />
+          </advancedOptions>
+          <option name="port" value="22" />
+        </fileTransfer>
+      </webServer>
+    </option>
+  </component>
+</project>

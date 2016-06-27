@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="PublishConfigData" autoUpload="Always" serverName="ubt16a.cs.cityu.edu.hk">
+    <serverData>
+      <paths name="ubt16a.cs.cityu.edu.hk">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/public/bgp/BLSTM" local="$PROJECT_DIR$" web="/" />
+          </mappings>
+        </serverdata>
+      </paths>
+    </serverData>
+    <option name="myAutoUpload" value="ALWAYS" />
+  </component>
+</project>

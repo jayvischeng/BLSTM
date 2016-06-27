@@ -144,8 +144,13 @@ def Convergge(X_Training,Y_Training,time_scale_size):
     return  np.array(TEMP_XData),Y_Training
 
 def Main(Method_Dict,filename,window_size_label,window_size=0,time_scale_size=0):
-    global positive_sign,negative_sign,input_data_path,output_data_path
-    scaler = preprocessing.Normalizer()
+    global lstm_size,positive_sign,negative_sign,input_data_path,output_data_path,Normalization_Method
+    if Normalization_Method == "_Std":
+        scaler = preprocessing.StandardScaler()
+    elif Normalization_Method == "_L2norm":
+        scaler = preprocessing.Normalizer()
+    elif Normalization_Method == "_Minmax":
+        scaler = preprocessing.MinMaxScaler()
 
     Data_=LoadData(input_data_path,filename)
     cross_folder = 3
@@ -270,8 +275,8 @@ def Main(Method_Dict,filename,window_size_label,window_size=0,time_scale_size=0)
 
                             del model
                         else:
-                            (X_Training_1, Y_Training_1) = reConstruction(window_size, scaler.fit_transform(Training_Data[:,:-1]),Training_Data[:,-1])
-                            (X_Testing_1, Y_Testing_1) = reConstruction(window_size, scaler.fit_transform(Testing_Data[:,:-1]), Testing_Data[:,-1])
+                            (X_Training_1, Y_Training_1) = reConstruction(window_size, Training_Data[:,:-1],Training_Data[:,-1])
+                            (X_Testing_1, Y_Testing_1) = reConstruction(window_size, Testing_Data[:,:-1], Testing_Data[:,-1])
                             X_Training,Y_Training = Manipulation(X_Training_1,Y_Training_1,time_scale_size)
                             X_Testing,Y_Testing = Manipulation(X_Testing_1,Y_Testing_1,time_scale_size)
 
@@ -313,13 +318,15 @@ def Main(Method_Dict,filename,window_size_label,window_size=0,time_scale_size=0)
                             clf = linear_model.LogisticRegression()
                         elif methodLabel == 5:
                             clf = KNeighborsClassifier(3)
-                    #print(str(tab_cross+1)+"th cross validation is running and the training size is "+str(len(X_Training))+", testing size is "+str(len(X_Testing))+"......")
+
+                        #print(str(tab_cross+1)+"th cross validation is running and the training size is "+str(len(X_Training))+", testing size is "+str(len(X_Testing))+"......")
+
                         clf.fit(X_Training, Y_Training)
                         result = clf.predict(X_Testing)
+
                     #positive_=Training_Data[Training_Data[:,-1]==positive_sign]
                     #negative_=Training_Data[Training_Data[:,-1]==negative_sign]
                     #print("IR is :"+str(float(len(negative_))/len(positive_)))
-                    lstm_size = 30
 
 
                     Output=[]
@@ -481,45 +488,46 @@ def get_all_subfactors(number):
     return temp_list
 
 if __name__=='__main__':
-    global positive_sign,negative_sign,input_data_path,output_data_path
+    global lstm_size,positive_sign,negative_sign,input_data_path,output_data_path,Normalization_Method
     #os.chdir("/home/grads/mcheng223/IGBB")
     positive_sign=0
     negative_sign=1
     input_data_path =os.getcwd()
-
+    Normalization_Method = "_L2norm"
     window_size_label_list = ['true','false']
-    window_size_list = [10,20,30,40,50,60]
-    #window_size_list = [5]
+    #window_size_list = [10,20,30,40,50,60]
+    window_size_list = [60]
     filenamelist=os.listdir(input_data_path)
-
-    #Method_Dict={"LSTM":0}
-    Method_Dict={"LSTM":0,"AdaBoost":1,"DT":2,"SVM":3,"LR":4,"KNN":5}
+    lstm_size_list = [30]
 
     for eachfile in filenamelist:
-        if  not eachfile=='B_Slammer.txt':continue
+        if  not eachfile=='B_C_N_S.txt':continue
         if '.py' in eachfile or '.DS_' in eachfile: continue
         if '.txt' in eachfile:
             pass
         else:
             continue
         print(eachfile+ " is processing--------------------------------------------------------------------------------------------- ")
-        for window_size_label in window_size_label_list:
-            if window_size_label == 'true':
-                Method_Dict = {"LSTM": 0, "AdaBoost": 1, "DT": 2, "SVM": 3, "LR": 4, "KNN": 5}
-                for window_size in window_size_list:
-                    time_scale_size_list = get_all_subfactors(window_size)
-                    for time_scale_size in time_scale_size_list:
-                        output_data_path = os.path.join(os.getcwd(),'Window_Size_'+str(window_size))
+        for lstm_size in lstm_size_list:
+            for window_size_label in window_size_label_list:
+                if window_size_label == 'true':
+                    #Method_Dict={"LSTM":0}
+                    Method_Dict = {"LSTM": 0, "AdaBoost": 1, "DT": 2, "SVM": 3, "LR": 4, "KNN": 5}
+                    for window_size in window_size_list:
+                        time_scale_size_list = get_all_subfactors(window_size)
+                        output_data_path = os.path.join(os.getcwd(),'Window_Size_' + str(window_size) + '_LS_' + str(lstm_size)+Normalization_Method)
                         if not os.path.isdir(output_data_path):
                             os.makedirs(output_data_path)
-                        Main(Method_Dict,eachfile,window_size_label,window_size,time_scale_size)
+                        for time_scale_size in time_scale_size_list:
+                            Main(Method_Dict,eachfile,window_size_label,window_size,time_scale_size)
 
-            else:
-                Method_Dict = {"AdaBoost": 1, "DT": 2, "SVM": 3, "LR": 4, "KNN": 5}
-                output_data_path = os.path.join(os.getcwd(),'Traditional')
-                if not os.path.isdir(output_data_path):
-                    os.makedirs(output_data_path)
-                Main(Method_Dict,eachfile,window_size_label)
+                else:
+                    continue
+                    Method_Dict = {"AdaBoost": 1, "DT": 2, "SVM": 3, "LR": 4, "KNN": 5}
+                    output_data_path = os.path.join(os.getcwd(),'Traditional'+Normalization_Method)
+                    if not os.path.isdir(output_data_path):
+                        os.makedirs(output_data_path)
+                    Main(Method_Dict,eachfile,window_size_label)
 
     print(time.time()-start)
 
