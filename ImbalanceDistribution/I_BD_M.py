@@ -145,15 +145,23 @@ def Convergge(X_Training,Y_Training,time_scale_size):
     return  np.array(TEMP_XData),Y_Training
 
 def Main(Method_Dict,filename,bagging_label,window_size_label,window_size=0,time_scale_size=0):
-    global positive_sign,negative_sign,input_data_path,output_data_path
+    global positive_sign,negative_sign,input_data_path_training,input_data_path_testing,output_data_path
     scaler = preprocessing.Normalizer()
 
-    Data_=LoadData(input_data_path,filename)
-    cross_folder = 3
-    Pos_Data=Data_[Data_[:,-1]==positive_sign]
-    Neg_Data=Data_[Data_[:,-1]==negative_sign]
-    PositiveIndex = returnPositiveIndex(Data_,positive_sign)
-    NegativeIndex = returnNegativeIndex(Data_,negative_sign)
+    if eachfile == "IB_Code_Red_I.txt":
+        Training_Data = LoadData(input_data_path_training,"IB_N_S_Training.txt")
+    elif eachfile == "IB_Nimda.txt":
+        Training_Data = LoadData(input_data_path_training,"IB_C_S_Training.txt")
+    elif eachfile == "IB_Slammer.txt":
+        Training_Data = LoadData(input_data_path_training,"IB_C_N_Training.txt")
+
+
+    Testing_Data=LoadData(input_data_path,filename)
+
+    Pos_Data=Training_Data[Training_Data[:,-1]==positive_sign]
+    Neg_Data=Training_Data[Training_Data[:,-1]==negative_sign]
+    PositiveIndex = returnPositiveIndex(Training_Data,positive_sign)
+    NegativeIndex = returnNegativeIndex(Training_Data,negative_sign)
 
     Auc_list = {}
     ACC_R_list = {}
@@ -210,37 +218,15 @@ def Main(Method_Dict,filename,bagging_label,window_size_label,window_size=0,time
             cross_folder_g_mean_list = []
             cross_folder_acc_list = []
             cross_folder_f1_list = []
+            cross_folder = 1
             for iteration_count in range(Iterations):
                 print(str(iteration_count+1)+"th iterations is running...")
                 for tab_cross in range(cross_folder):
-                    Positive_Data_Index_Training = []
-                    Positive_Data_Index_Testing = []
-                    Negative_Data_Index_Training = []
-                    Negative_Data_Index_Testing = []
 
-                    for tab_positive in range(len(PositiveIndex)):
-                        if int((cross_folder - tab_cross - 1) * len(Pos_Data) / cross_folder) <= tab_positive < int(
-                                                (cross_folder - tab_cross) * len(Pos_Data) / cross_folder):
-                            Positive_Data_Index_Testing.append(PositiveIndex[tab_positive])
-                        else:
-                            Positive_Data_Index_Training.append(PositiveIndex[tab_positive])
-                    for tab_negative in range(len(NegativeIndex)):
-                        if int((cross_folder - tab_cross - 1) * len(Neg_Data) / cross_folder) <= tab_negative < int(
-                                                (cross_folder - tab_cross) * len(Neg_Data) / cross_folder):
-                            Negative_Data_Index_Testing.append(NegativeIndex[tab_negative])
-                        else:
-                            Negative_Data_Index_Training.append(NegativeIndex[tab_negative])
-
-                    Training_Data_Index = np.append(Negative_Data_Index_Training, Positive_Data_Index_Training, axis=0)
-                    Training_Data_Index.sort()
-                    Training_Data = Data_[Training_Data_Index, :]
 
                     Training_Data_Pos = Training_Data[Training_Data[:,-1]==positive_sign]
                     Training_Data_Neg = Training_Data[Training_Data[:,-1]==negative_sign]
 
-                    Testing_Data_Index = np.append(Negative_Data_Index_Testing, Positive_Data_Index_Testing, axis=0)
-                    Testing_Data_Index.sort()
-                    Testing_Data = Data_[Testing_Data_Index, :]
                     print(str(tab_cross + 1) + "th Cross Validation is running and the training size is " + str( \
                         len(Training_Data)) + ", testing size is " + str(len(Testing_Data)) + "......")
                     # positive_=Training_Data[Training_Data[:,-1]==positive_sign]
@@ -268,20 +254,20 @@ def Main(Method_Dict,filename,bagging_label,window_size_label,window_size=0,time
 
 
 
-                    VotingList=[[] for i in range(bagging_number)]
                     #scaler = preprocessing.StandardScaler()
                     #(X_Testing, Y_Testing) = reConstruction(window_size, scaler.fit_transform(X_Testing), Y_Testing)
 
-
+                    VotingList = []
                     for t in range(bagging_number):
+                        VotingList.append([])
                         print(str(t+1)+" th base leaner is running......and positive testing is "+str(list(Y_Testing).count(positive_sign))+" and negative testing is "+str(list(Y_Testing).count(negative_sign)))
                         #Positive_Data_Samples=RANDOM.sample(Positive_Training_Data,int(len(Positive_Training_Data)))
-                        Positive_Data_Samples_Index = Positive_Data_Index_Training
-                        Negative_Data_Samples_Index = RANDOM.sample(Negative_Data_Index_Training, len(Positive_Data_Samples_Index))
+                        Positive_Data_Samples_Index = PositiveIndex
+                        Negative_Data_Samples_Index = RANDOM.sample(NegativeIndex, len(Positive_Data_Samples_Index))
 
                         TrainingSamples_Index = np.concatenate((Negative_Data_Samples_Index, Positive_Data_Samples_Index))
                         TrainingSamples_Index.sort()
-                        TrainingSamples = Data_[TrainingSamples_Index,:]
+                        TrainingSamples = Training_Data[TrainingSamples_Index,:]
 
                         Y_Training_0 = TrainingSamples[:, -1]
                         X_Training_0 = TrainingSamples[:, :-1]
@@ -289,7 +275,7 @@ def Main(Method_Dict,filename,bagging_label,window_size_label,window_size=0,time
                             if methodLabel == 0:
                                 np.random.seed(1337)  # for reproducibility
                                 batch_size = 200
-                                (X_Training_1,Y_Training_1) = reConstruction(window_size,scaler.fit_transform(X_Training_0),Y_Training_0)
+                                (X_Training_1,Y_Training_1) = reConstruction(window_size,scaler.fit_transform(Training_Data[:,:-1]),Training_Data[:,-1])
                                 X_Training,Y_Training = Convergge(X_Training_1,Y_Training_1,time_scale_size)
 
                                 print(X_Training.shape)
@@ -308,6 +294,7 @@ def Main(Method_Dict,filename,bagging_label,window_size_label,window_size=0,time
                                 result = model.predict(X_Testing,batch_size=batch_size)
                                 VotingList[t].extend(result)
                                 del model
+                                break
                             else:
                                 (X_Training_1, Y_Training_1) = reConstruction(window_size, X_Training_0,Y_Training_0)
                                 X_Training, Y_Training = Manipulation(X_Training_1, Y_Training_1, time_scale_size)
@@ -476,12 +463,13 @@ def get_all_subfactors(number):
     return temp_list
 
 if __name__=='__main__':
-    global positive_sign,negative_sign,input_data_path,output_data_path
+    global positive_sign,negative_sign,input_data_path_training,input_data_path_testing,output_data_path
     #os.chdir("/home/grads/mcheng223/IGBB")
     positive_sign=0
     negative_sign=1
     input_data_path =os.getcwd()
-
+    input_data_path_training =os.path.join(input_data_path,"Training")
+    input_data_path_testing =input_data_path
     window_size_label_list = ['true','false']
     window_size_list = [60]
 
@@ -494,7 +482,7 @@ if __name__=='__main__':
     #Method_Dict={"LSTM":0,"AdaBoost":1,"DT":2,"SVM":3,"LR":4,"KNN":5}
 
     for eachfile in filenamelist:
-        if  not eachfile=='IB_C_N_S.txt':continue
+        if  not eachfile=='IB_Slammer.txt':continue
         if '.py' in eachfile or '.DS_' in eachfile: continue
         if '.txt' in eachfile:
             pass
@@ -503,16 +491,18 @@ if __name__=='__main__':
         print(eachfile+ " is processing--------------------------------------------------------------------------------------------- ")
         for window_size_label in window_size_label_list:
             if window_size_label == 'true':
-                Method_Dict = {"LSTM": 0, "AdaBoost": 1, "DT": 2, "SVM": 3, "LR": 4, "KNN": 5}
+                Method_Dict = {"LSTM": 0}
+                #Method_Dict = {"LSTM": 0, "AdaBoost": 1, "DT": 2, "SVM": 3, "LR": 4, "KNN": 5}
                 for window_size in window_size_list:
                     time_scale_size_list = get_all_subfactors(window_size)
                     for time_scale_size in time_scale_size_list:
-                        output_data_path = os.path.join(os.getcwd(),'Window_Size_'+str(window_size)+'_'+eachfile.split('.')[0]+'_BS_'+str(bagging_label))
+                        output_data_path = os.path.join(os.getcwd(),'Window_Size_'+str(window_size)+'_Multi_For_'+eachfile.split('.')[0]+'_LSTM_'+str(bagging_label))
                         if not os.path.isdir(output_data_path):
                             os.makedirs(output_data_path)
                         Main(Method_Dict,eachfile,bagging_label,window_size_label,window_size,time_scale_size)
 
             else:
+                continue
                 Method_Dict = {"AdaBoost": 1, "DT": 2, "SVM": 3, "LR": 4, "KNN": 5}
                 output_data_path = os.path.join(os.getcwd(),'Traditional')
                 if not os.path.isdir(output_data_path):

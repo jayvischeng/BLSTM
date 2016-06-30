@@ -496,9 +496,9 @@ if __name__=='__main__':
     Normalization_Method = "_L2norm"
     window_size_label_list = ['true','false']
     #window_size_list = [10,20,30,40,50,60]
-    window_size_list = [60]
+    window_size_list = [10]
     filenamelist=os.listdir(input_data_path)
-    lstm_size_list = [30]
+    lstm_size_list = [25]
 
     for eachfile in filenamelist:
         if  not eachfile=='B_C_N_S.txt':continue
