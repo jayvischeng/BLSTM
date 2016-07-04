@@ -247,8 +247,6 @@ def Main(Method_Dict,filename,bagging_label,window_size_label,window_size=0,time
                         X_Testing = scaler.fit_transform(X_Testing)
                     # print(str(tab_cross+1)+"th cross validation is running and the training size is "+str(len(X_Training))+", testing size is "+str(len(X_Testing))+"......")
 
-                    #positive_ = Training_Data[Training_Data[:, -1] == positive_sign]
-                    #negative_ = Training_Data[Training_Data[:, -1] == negative_sign]
                     #print("IR is :" + str(float(len(negative_)) / len(positive_)))
                     lstm_size = 30
 
