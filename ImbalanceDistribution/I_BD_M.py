@@ -252,7 +252,6 @@ def Main(Method_Dict,filename,bagging_label,window_size_label,window_size=0,time
 
 
 
-                    #scaler = preprocessing.StandardScaler()
                     #(X_Testing, Y_Testing) = reConstruction(window_size, scaler.fit_transform(X_Testing), Y_Testing)
 
                     VotingList = []
