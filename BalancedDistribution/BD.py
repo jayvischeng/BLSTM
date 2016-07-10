@@ -62,8 +62,8 @@ def LoadData(input_data_path,filename):
                 #print(each)
                 if val[-1].strip()== negative_flag:
                     val[-1] = negative_sign
-                else:
-                    val[-1] = positive_sign
+                #else:
+                    #val[-1] = positive_sign
                 try:
                     val=map(lambda a:float(a),val)
                 except:
@@ -115,10 +115,10 @@ def Manipulation(X_Taining,Y_Training,time_scale_size):
             TEMP_Value = TEMP_Value/time_scale_size
             TEMP_XTraining[tab1].extend(list(TEMP_Value[0]))
     return TEMP_XTraining,Y_Training
-def returnPositiveIndex(Data,positive_sign):
+def returnPositiveIndex(Data,negative_sign):
     temp = []
     for i in range(len(Data)):
-        if Data[i][-1] == positive_sign:
+        if Data[i][-1] != negative_sign:
             temp.append(i)
     return temp
 
@@ -154,9 +154,9 @@ def Main(Method_Dict,filename,window_size_label,window_size=0,time_scale_size=0)
 
     Data_=LoadData(input_data_path,filename)
     cross_folder = 3
-    Pos_Data=Data_[Data_[:,-1]==positive_sign]
+    Pos_Data=Data_[Data_[:,-1]!=negative_sign]
     Neg_Data=Data_[Data_[:,-1]==negative_sign]
-    PositiveIndex = returnPositiveIndex(Data_,positive_sign)
+    PositiveIndex = returnPositiveIndex(Data_,negative_sign)
     NegativeIndex = returnNegativeIndex(Data_,negative_sign)
 
     Auc_list = {}
@@ -241,15 +241,29 @@ def Main(Method_Dict,filename,window_size_label,window_size=0,time_scale_size=0)
 
                     Training_Data_Index=np.append(Negative_Data_Index_Training,Positive_Data_Index_Training,axis=0)
                     Training_Data_Index.sort()
+
+                    #print(Training_Data_Index)
+
+                    Training_Data_Index = map(lambda a:int(a),Training_Data_Index)
+
+                    #print(Training_Data_Index)
+
                     Training_Data = Data_[Training_Data_Index,:]
 
                     Testing_Data_Index=np.append(Negative_Data_Index_Testing,Positive_Data_Index_Testing,axis=0)
+
                     Testing_Data_Index.sort()
+
+                    Testing_Data_Index = map(lambda a:int(a),Testing_Data_Index)
+
                     Testing_Data = Data_[Testing_Data_Index,:]
+
                     print(str(tab_cross+1)+"th Cross Validation is running and the training size is "+str(len(Training_Data))+", testing size is "+str(len(Testing_Data))+"......")
+
                     #positive_=Training_Data[Training_Data[:,-1]==positive_sign]
                     #negative_=Training_Data[Training_Data[:,-1]==negative_sign]
-                    #print("IR000000000000000000000 is :"+str(float(len(negative_))/len(positive_)))
+                    #print("IR is :"+str(float(len(negative_))/len(positive_)))
+
                     if window_size_label == "true":
                         if methodLabel == 0:
                             np.random.seed(1337)  # for reproducibility
@@ -266,9 +280,9 @@ def Main(Method_Dict,filename,window_size_label,window_size=0,time_scale_size=0)
                             model = Sequential()
 
                             model.add(lstm_object)  # X.shape is (samples, timesteps, dimension)
-                            model.add(Dense(output_dim=1))
+                            model.add(Dense(output_dim=2))
                             model.add(Activation("sigmoid"))
-                            model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
+                            model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
 
                             model.fit(X_Training, Y_Training, batch_size=batch_size, nb_epoch=20)
                             result = model.predict(X_Testing, batch_size=batch_size)
@@ -298,6 +312,10 @@ def Main(Method_Dict,filename,window_size_label,window_size=0,time_scale_size=0)
 
                             clf.fit(X_Training, Y_Training)
                             result = clf.predict(X_Testing)
+                            print("1111111111111111111111111111111111111")
+                            print(result)
+                            print("2222222222222222222222222222222222222")
+                            print(Y_Testing)
                     else:
                         X_Training = Training_Data[:,:-1]
                         Y_Training = Training_Data[:,-1]
@@ -317,13 +335,16 @@ def Main(Method_Dict,filename,window_size_label,window_size=0,time_scale_size=0)
                         elif methodLabel == 4:
                             clf = linear_model.LogisticRegression()
                         elif methodLabel == 5:
-                            clf = KNeighborsClassifier(3)
+                            clf = KNeighborsClassifier(15)
 
                         #print(str(tab_cross+1)+"th cross validation is running and the training size is "+str(len(X_Training))+", testing size is "+str(len(X_Testing))+"......")
 
                         clf.fit(X_Training, Y_Training)
                         result = clf.predict(X_Testing)
-
+                        print("1111111111111111111111111111111111111")
+                        print(result)
+                        print("2222222222222222222222222222222222222")
+                        print(Y_Testing)
                     #positive_=Training_Data[Training_Data[:,-1]==positive_sign]
                     #negative_=Training_Data[Training_Data[:,-1]==negative_sign]
                     #print("IR is :"+str(float(len(negative_))/len(positive_)))
@@ -338,131 +359,159 @@ def Main(Method_Dict,filename,window_size_label,window_size=0,time_scale_size=0)
                     ac_positive=0
                     ac_negative=0
                     for tab in range(len(Output)):
-                        if Output[tab]==positive_sign and Output[tab]==int(Y_Testing[tab]):
-                            ac_positive += 1
-                        if Output[tab]==negative_sign and Output[tab]==int(Y_Testing[tab]):
-                            ac_negative += 1
+                        if Output[tab]==int(Y_Testing[tab]):
+                            if Output[tab]==negative_sign:
+                                ac_negative += 1
+                            else:
+                                ac_positive += 1
                     try:
                         ACC_R = float(ac_negative)/Output.count(negative_sign)
                     except:
                         ACC_R = float(ac_negative)*100/(Output.count(negative_sign)+1)
-                    try:
-                        ACC_A = float(ac_positive)/Output.count(positive_sign)
-                    except:
-                        ACC_A = float(ac_positive)*100/(Output.count(positive_sign)+1)
+                    #try:
+                        #ACC_A = float(ac_positive)/Output.count(positive_sign)
+                    #except:
+                        #ACC_A = float(ac_positive)*100/(Output.count(positive_sign)+1)
 
-                    auc = roc_auc_score(Y_Testing,Output)
-                    g_mean=np.sqrt(float(ac_positive*ac_negative)/(len(np.array(Y_Testing)[np.array(Y_Testing)==positive_sign])*len(np.array(Y_Testing)[np.array(Y_Testing)==negative_sign])))
-                    precision = ACC_A
-                    recall = float(ac_positive)/list(Y_Testing).count(positive_sign)
+                    #auc = roc_auc_score(Y_Testing,Output)
+                    #g_mean=np.sqrt(float(ac_positive*ac_negative)/(len(np.array(Y_Testing)[np.array(Y_Testing)==positive_sign])*len(np.array(Y_Testing)[np.array(Y_Testing)==negative_sign])))
+                    #precision = ACC_A
+                    #recall = float(ac_positive)/list(Y_Testing).count(positive_sign)
                     ACC = round(float(ac_positive+ac_negative)/len(Output),5)
-                    f1_score = round((2*precision*recall)/(precision+recall),5)
+                    #f1_score = round((2*precision*recall)/(precision+recall),5)
 
 
-                    cross_folder_acc_r_list.append(ACC_R*100)
-                    cross_folder_acc_a_list.append(ACC_A*100)
-                    cross_folder_auc_list.append(auc*100)
-                    cross_folder_g_mean_list.append(g_mean*100)
+                    #cross_folder_acc_r_list.append(ACC_R*100)
+                    #cross_folder_acc_a_list.append(ACC_A*100)
+
+                    #cross_folder_auc_list.append(auc*100)
+                    #cross_folder_g_mean_list.append(g_mean*100)
+
                     cross_folder_acc_list.append(ACC*100)
-                    cross_folder_f1_list.append(f1_score*100)
+                    print("hAhA")
+                    print(cross_folder_acc_list)
+#                    cross_folder_f1_list.append(f1_score*100)
 
-                for tab1 in range(int(len(cross_folder_auc_list)/cross_folder)):
-                    temp_acc_r=0.0
-                    temp_acc_a=0.0
-                    temp_auc=0.0
-                    temp_g_mean=0.0
+                print("UUUUUUUUUU")
+                print(cross_folder_acc_list)
+                for tab1 in range(int(len(cross_folder_acc_list)/cross_folder)):
+                    #temp_acc_r=0.0
+                    #temp_acc_a=0.0
+
+                    #temp_auc=0.0
+                    #temp_g_mean=0.0
+
                     temp_acc=0.0
-                    temp_f1_score=0.0
+                    #temp_f1_score=0.0
                     for tab2 in range(cross_folder):
-                        temp_acc_r += cross_folder_acc_r_list[tab1*cross_folder+tab2]
-                        temp_acc_a += cross_folder_acc_a_list[tab1*cross_folder+tab2]
-                        temp_auc += cross_folder_auc_list[tab1*cross_folder+tab2]
-                        temp_g_mean += cross_folder_g_mean_list[tab1*cross_folder+tab2]
+                        #temp_acc_r += cross_folder_acc_r_list[tab1*cross_folder+tab2]
+                        #temp_acc_a += cross_folder_acc_a_list[tab1*cross_folder+tab2]
+
+                        #temp_auc += cross_folder_auc_list[tab1*cross_folder+tab2]
+                        #temp_g_mean += cross_folder_g_mean_list[tab1*cross_folder+tab2]
+
                         temp_acc += cross_folder_acc_list[tab1*cross_folder+tab2]
-                        temp_f1_score += cross_folder_f1_list[tab1*cross_folder+tab2]
+                        #temp_f1_score += cross_folder_f1_list[tab1*cross_folder+tab2]
 
-                    temp_acc_r=temp_acc_r/float(cross_folder)
-                    temp_acc_a=temp_acc_a/float(cross_folder)
-                    temp_auc=temp_auc/float(cross_folder)
-                    temp_g_mean=temp_g_mean/float(cross_folder)
+                    #temp_acc_r=temp_acc_r/float(cross_folder)
+                    #temp_acc_a=temp_acc_a/float(cross_folder)
+
+                    #temp_auc=temp_auc/float(cross_folder)
+                    #temp_g_mean=temp_g_mean/float(cross_folder)
+
                     temp_acc=temp_acc/float(cross_folder)
-                    temp_f1_score=temp_f1_score/float(cross_folder)
+                    #temp_f1_score=temp_f1_score/float(cross_folder)
 
-                    Temp_SubFeature_ACC_R_list[eachMethod+"_TF_"+str(Top_K)].append(temp_acc_r)
-                    Temp_SubFeature_ACC_A_list[eachMethod+"_TF_"+str(Top_K)].append(temp_acc_a)
-                    Temp_SubFeature_Auc_list[eachMethod+"_TF_"+str(Top_K)].append(temp_auc)
-                    Temp_SubFeature_G_mean_list[eachMethod+"_TF_"+str(Top_K)].append(temp_g_mean)
+                    #Temp_SubFeature_ACC_R_list[eachMethod+"_TF_"+str(Top_K)].append(temp_acc_r)
+                    #Temp_SubFeature_ACC_A_list[eachMethod+"_TF_"+str(Top_K)].append(temp_acc_a)
+
+                    #Temp_SubFeature_Auc_list[eachMethod+"_TF_"+str(Top_K)].append(temp_auc)
+                    #Temp_SubFeature_G_mean_list[eachMethod+"_TF_"+str(Top_K)].append(temp_g_mean)
+
                     Temp_SubFeature_ACC_list[eachMethod+"_TF_"+str(Top_K)].append(temp_acc)
-                    Temp_SubFeature_F1_list[eachMethod+"_TF_"+str(Top_K)].append(temp_f1_score)
+                    #Temp_SubFeature_F1_list[eachMethod+"_TF_"+str(Top_K)].append(temp_f1_score)
 
 
-            deviation_acc_r=0.0
-            deviation_acc_a=0.0
-            deviation_auc=0.0
-            deviation_g_mean=0.0
+            #deviation_acc_r=0.0
+            #deviation_acc_a=0.0
+
+            #deviation_auc=0.0
+            #deviation_g_mean=0.0
+
             deviation_acc=0.0
-            deviation_f1_score=0.0
+            #deviation_f1_score=0.0
 
-            mean_acc_r=Compute_average_list(Temp_SubFeature_ACC_R_list[eachMethod+"_TF_"+str(Top_K)])
-            mean_acc_a=Compute_average_list(Temp_SubFeature_ACC_A_list[eachMethod+"_TF_"+str(Top_K)])
-            mean_auc=Compute_average_list(Temp_SubFeature_Auc_list[eachMethod+"_TF_"+str(Top_K)])
-            mean_g_mean=Compute_average_list(Temp_SubFeature_G_mean_list[eachMethod+"_TF_"+str(Top_K)])
+            #mean_acc_r=Compute_average_list(Temp_SubFeature_ACC_R_list[eachMethod+"_TF_"+str(Top_K)])
+            #mean_acc_a=Compute_average_list(Temp_SubFeature_ACC_A_list[eachMethod+"_TF_"+str(Top_K)])
+
+            #mean_auc=Compute_average_list(Temp_SubFeature_Auc_list[eachMethod+"_TF_"+str(Top_K)])
+            #mean_g_mean=Compute_average_list(Temp_SubFeature_G_mean_list[eachMethod+"_TF_"+str(Top_K)])
+            print("000000000")
+            print(Temp_SubFeature_ACC_list[eachMethod+"_TF_"+str(Top_K)])
             mean_acc=Compute_average_list(Temp_SubFeature_ACC_list[eachMethod+"_TF_"+str(Top_K)])
-            mean_f1_score=Compute_average_list(Temp_SubFeature_F1_list[eachMethod+"_TF_"+str(Top_K)])
+            #mean_f1_score=Compute_average_list(Temp_SubFeature_F1_list[eachMethod+"_TF_"+str(Top_K)])
 
             for tab in range(len(Temp_SubFeature_Auc_list[eachMethod+"_TF_"+str(Top_K)])):
-                temp_acc_r = Temp_SubFeature_ACC_R_list[eachMethod+"_TF_"+str(Top_K)][tab]
-                temp_acc_a = Temp_SubFeature_ACC_A_list[eachMethod+"_TF_"+str(Top_K)][tab]
+                #temp_acc_r = Temp_SubFeature_ACC_R_list[eachMethod+"_TF_"+str(Top_K)][tab]
+                #temp_acc_a = Temp_SubFeature_ACC_A_list[eachMethod+"_TF_"+str(Top_K)][tab]
 
-                deviation_acc_r=deviation_acc_r+((temp_acc_r-mean_acc_r)*(temp_acc_r-mean_acc_r))
-                deviation_acc_a=deviation_acc_a+((temp_acc_a-mean_acc_a)*(temp_acc_a-mean_acc_a))
+                #deviation_acc_r=deviation_acc_r+((temp_acc_r-mean_acc_r)*(temp_acc_r-mean_acc_r))
+                #deviation_acc_a=deviation_acc_a+((temp_acc_a-mean_acc_a)*(temp_acc_a-mean_acc_a))
 
-                temp_auc = Temp_SubFeature_Auc_list[eachMethod+"_TF_"+str(Top_K)][tab]
-                deviation_auc=deviation_auc+((temp_auc-mean_auc)*(temp_auc-mean_auc))
+                #temp_auc = Temp_SubFeature_Auc_list[eachMethod+"_TF_"+str(Top_K)][tab]
+                #deviation_auc=deviation_auc+((temp_auc-mean_auc)*(temp_auc-mean_auc))
 
-                temp_g_mean = Temp_SubFeature_G_mean_list[eachMethod+"_TF_"+str(Top_K)][tab]
-                deviation_g_mean=deviation_g_mean+((temp_g_mean-mean_g_mean)*(temp_g_mean-mean_g_mean))
+                #temp_g_mean = Temp_SubFeature_G_mean_list[eachMethod+"_TF_"+str(Top_K)][tab]
+                #deviation_g_mean=deviation_g_mean+((temp_g_mean-mean_g_mean)*(temp_g_mean-mean_g_mean))
 
                 temp_acc = Temp_SubFeature_ACC_list[eachMethod+"_TF_"+str(Top_K)][tab]
                 deviation_acc=deviation_acc+((temp_acc-mean_acc)*(temp_acc-mean_acc))
 
-                temp_f1_score = Temp_SubFeature_F1_list[eachMethod+"_TF_"+str(Top_K)][tab]
-                deviation_f1_score=deviation_f1_score+((temp_f1_score-mean_f1_score)*(temp_f1_score-mean_f1_score))
+                #temp_f1_score = Temp_SubFeature_F1_list[eachMethod+"_TF_"+str(Top_K)][tab]
+                #deviation_f1_score=deviation_f1_score+((temp_f1_score-mean_f1_score)*(temp_f1_score-mean_f1_score))
 
-            deviation_acc_r/=Iterations
-            deviation_acc_a/=Iterations
-            deviation_auc/=Iterations
-            deviation_g_mean/=Iterations
+            #deviation_acc_r/=Iterations
+            #deviation_acc_a/=Iterations
+
+            #deviation_auc/=Iterations
+            #deviation_g_mean/=Iterations
+
             deviation_acc/=Iterations
-            deviation_f1_score/=Iterations
-            Deviation_ACC_R_list[eachMethod+"_TF_"+str(Top_K)].append(deviation_acc_r)
-            Deviation_ACC_A_list[eachMethod+"_TF_"+str(Top_K)].append(deviation_acc_a)
-            Deviation_Auc_list[eachMethod+"_TF_"+str(Top_K)].append(deviation_auc)
-            Deviation_G_mean_list[eachMethod+"_TF_"+str(Top_K)].append(deviation_g_mean)
+            #deviation_f1_score/=Iterations
+            #Deviation_ACC_R_list[eachMethod+"_TF_"+str(Top_K)].append(deviation_acc_r)
+            #Deviation_ACC_A_list[eachMethod+"_TF_"+str(Top_K)].append(deviation_acc_a)
+
+            #Deviation_Auc_list[eachMethod+"_TF_"+str(Top_K)].append(deviation_auc)
+            #Deviation_G_mean_list[eachMethod+"_TF_"+str(Top_K)].append(deviation_g_mean)
+
             Deviation_ACC_list[eachMethod+"_TF_"+str(Top_K)].append(deviation_acc)
-            Deviation_F1_list[eachMethod+"_TF_"+str(Top_K)].append(deviation_f1_score)
+            #Deviation_F1_list[eachMethod+"_TF_"+str(Top_K)].append(deviation_f1_score)
 
 
-            ACC_R_list[eachMethod].append(Compute_average_list(Temp_SubFeature_ACC_R_list[eachMethod+"_TF_"+str(Top_K)]))
-            ACC_A_list[eachMethod].append(Compute_average_list(Temp_SubFeature_ACC_A_list[eachMethod+"_TF_"+str(Top_K)]))
+            #ACC_R_list[eachMethod].append(Compute_average_list(Temp_SubFeature_ACC_R_list[eachMethod+"_TF_"+str(Top_K)]))
+            #ACC_A_list[eachMethod].append(Compute_average_list(Temp_SubFeature_ACC_A_list[eachMethod+"_TF_"+str(Top_K)]))
             ACC_list[eachMethod].append(Compute_average_list(Temp_SubFeature_ACC_list[eachMethod+"_TF_"+str(Top_K)]))
-            Auc_list[eachMethod].append(Compute_average_list(Temp_SubFeature_Auc_list[eachMethod+"_TF_"+str(Top_K)]))
-            G_mean_list[eachMethod].append(Compute_average_list(Temp_SubFeature_G_mean_list[eachMethod+"_TF_"+str(Top_K)]))
-            F1_list[eachMethod].append(Compute_average_list(Temp_SubFeature_F1_list[eachMethod+"_TF_"+str(Top_K)]))
+
+            #Auc_list[eachMethod].append(Compute_average_list(Temp_SubFeature_Auc_list[eachMethod+"_TF_"+str(Top_K)]))
+            #G_mean_list[eachMethod].append(Compute_average_list(Temp_SubFeature_G_mean_list[eachMethod+"_TF_"+str(Top_K)]))
+
+            #F1_list[eachMethod].append(Compute_average_list(Temp_SubFeature_F1_list[eachMethod+"_TF_"+str(Top_K)]))
 
 
 
-    Write_Out(output_data_path,filename,time_scale_size,ACC_R_list,"ACC_Regular")
-    Write_Out(output_data_path,filename,time_scale_size,ACC_A_list,"ACC_Anomaly")
+    #Write_Out(output_data_path,filename,time_scale_size,ACC_R_list,"ACC_Regular")
+    #Write_Out(output_data_path,filename,time_scale_size,ACC_A_list,"ACC_Anomaly")
     #Write_Out(output_data_path,filename,time_scale_size,Temp_SubFeature_ACC_R_list,"SubFeature_ACC_Regular",Deviation_ACC_R_list)
     #Write_Out(output_data_path,filename,time_scale_size,Temp_SubFeature_ACC_A_list,"SubFeature_ACC_Anomaly",Deviation_ACC_A_list)
-    Write_Out(output_data_path,filename,time_scale_size,Auc_list,"Auc")
+
+    #Write_Out(output_data_path,filename,time_scale_size,Auc_list,"Auc")
     #Write_Out(output_data_path,filename,time_scale_size,Temp_SubFeature_Auc_list,"SubFeature_Auc",Deviation_Auc_list)
-    Write_Out(output_data_path,filename,time_scale_size,G_mean_list,"G_mean")
+    #Write_Out(output_data_path,filename,time_scale_size,G_mean_list,"G_mean")
     #Write_Out(output_data_path,filename,time_scale_size,Temp_SubFeature_G_mean_list,"SubFeature_G_mean",Deviation_G_mean_list)
+
     Write_Out(output_data_path,filename,time_scale_size,ACC_list,"ACC")
     #Write_Out(output_data_path,filename,time_scale_size,Temp_SubFeature_ACC_list,"SubFeature_ACC",Deviation_ACC_list)
-    Write_Out(output_data_path,filename,time_scale_size,F1_list,"F1_score")
+    #Write_Out(output_data_path,filename,time_scale_size,F1_list,"F1_score")
     #Write_Out(output_data_path,filename,time_scale_size,Temp_SubFeature_F1_list,"SubFeature_F1_score",Deviation_F1_list)
 def Write_Out(filefolderpath,filename,time_scale_size,Result_List,Tag,Result_List_back=[]):
     with open(os.path.join(filefolderpath,filename.split('.')[0]+"_Info_"+Tag+"_List.txt"),"a")as fout:
@@ -490,18 +539,18 @@ def get_all_subfactors(number):
 if __name__=='__main__':
     global lstm_size,positive_sign,negative_sign,input_data_path,output_data_path,Normalization_Method
     #os.chdir("/home/grads/mcheng223/IGBB")
-    positive_sign=0
+    #positive_sign=0
     negative_sign=1
     input_data_path =os.getcwd()
     Normalization_Method = "_L2norm"
     window_size_label_list = ['true','false']
     #window_size_list = [10,20,30,40,50,60]
-    window_size_list = [10]
+    window_size_list = [40]
     filenamelist=os.listdir(input_data_path)
     lstm_size_list = [25]
 
     for eachfile in filenamelist:
-        if  not eachfile=='B_C_N_S.txt':continue
+        if  not eachfile=='B_C_N_S_Multi.txt':continue
         if '.py' in eachfile or '.DS_' in eachfile: continue
         if '.txt' in eachfile:
             pass
@@ -515,7 +564,7 @@ if __name__=='__main__':
                     Method_Dict = {"LSTM": 0, "AdaBoost": 1, "DT": 2, "SVM": 3, "LR": 4, "KNN": 5}
                     for window_size in window_size_list:
                         time_scale_size_list = get_all_subfactors(window_size)
-                        output_data_path = os.path.join(os.getcwd(),'Window_Size_' + str(window_size) + '_LS_' + str(lstm_size)+Normalization_Method)
+                        output_data_path = os.path.join(os.getcwd(),'Multi_Window_Size_' + str(window_size) + '_LS_' + str(lstm_size)+Normalization_Method)
                         if not os.path.isdir(output_data_path):
                             os.makedirs(output_data_path)
                         for time_scale_size in time_scale_size_list:
@@ -524,7 +573,7 @@ if __name__=='__main__':
                 else:
                     continue
                     Method_Dict = {"AdaBoost": 1, "DT": 2, "SVM": 3, "LR": 4, "KNN": 5}
-                    output_data_path = os.path.join(os.getcwd(),'Traditional'+Normalization_Method)
+                    output_data_path = os.path.join(os.getcwd(),'Multi_Traditional'+Normalization_Method)
                     if not os.path.isdir(output_data_path):
                         os.makedirs(output_data_path)
                     Main(Method_Dict,eachfile,window_size_label)
