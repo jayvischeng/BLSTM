@@ -5,6 +5,8 @@ start = time.time()
 import numpy as np
 from numpy import *
 from sklearn import tree
+from sklearn.preprocessing import LabelEncoder
+
 from sklearn import svm,datasets,preprocessing,linear_model
 from sklearn.metrics import roc_auc_score
 from keras.preprocessing import sequence
@@ -129,6 +131,22 @@ def returnNegativeIndex(Data,negative_sign):
             temp.append(i)
     return temp
 
+def MyEvaluation(Y_Testing, Result):
+    acc = 0
+    if len(Y_Testing)!=len(Result):
+        print("Error!!!")
+    else:
+        for tab1 in range(len(Result)):
+            temp_result = map(lambda a:int(round(a)),Result[tab1])
+            temp_true = map(lambda a:int(round(a)),Y_Testing[tab1])
+            print(type(temp_result))
+            print(temp_result)
+            print(temp_true)
+            if list(temp_result) == list(temp_true):
+                acc += 1
+    return round(float(acc)/len(Result),3)
+
+
 def Convergge(X_Training,Y_Training,time_scale_size):
     window_size = len(X_Training[0])
     TEMP_XData = []
@@ -154,10 +172,19 @@ def Main(Method_Dict,filename,window_size_label,window_size=0,time_scale_size=0)
 
     Data_=LoadData(input_data_path,filename)
     cross_folder = 3
-    Pos_Data=Data_[Data_[:,-1]!=negative_sign]
-    Neg_Data=Data_[Data_[:,-1]==negative_sign]
+
+    #Pos_Data=Data_[Data_[:,-1]!=negative_sign]
+    #Neg_Data=Data_[Data_[:,-1]==negative_sign]
     PositiveIndex = returnPositiveIndex(Data_,negative_sign)
     NegativeIndex = returnNegativeIndex(Data_,negative_sign)
+
+    np.random.shuffle(PositiveIndex)
+    Pos_Data = Data_[PositiveIndex]
+    Neg_Data = Data_[NegativeIndex]
+
+    print(Data_[PositiveIndex,-1])
+
+    print(Data_[NegativeIndex,-1])
 
     Auc_list = {}
     ACC_R_list = {}
@@ -233,6 +260,8 @@ def Main(Method_Dict,filename,window_size_label,window_size=0,time_scale_size=0)
                             Positive_Data_Index_Testing.append(PositiveIndex[tab_positive])
                         else:
                             Positive_Data_Index_Training.append(PositiveIndex[tab_positive])
+
+
                     for tab_negative in range(len(NegativeIndex)):
                         if int((cross_folder-tab_cross-1)*len(Neg_Data)/cross_folder)<=tab_negative<int((cross_folder-tab_cross)*len(Neg_Data)/cross_folder):
                             Negative_Data_Index_Testing.append(NegativeIndex[tab_negative])
@@ -249,6 +278,8 @@ def Main(Method_Dict,filename,window_size_label,window_size=0,time_scale_size=0)
                     #print(Training_Data_Index)
 
                     Training_Data = Data_[Training_Data_Index,:]
+                    print(list(Data_[Positive_Data_Index_Training,-1]).count(4))
+                    print(list(Pos_Data[:,-1]).count(4))
 
                     Testing_Data_Index=np.append(Negative_Data_Index_Testing,Positive_Data_Index_Testing,axis=0)
 
@@ -273,6 +304,22 @@ def Main(Method_Dict,filename,window_size_label,window_size=0,time_scale_size=0)
 
                             X_Training, Y_Training = Convergge(X_Training_1, Y_Training_1, time_scale_size)
                             X_Testing, Y_Testing = Convergge(X_Testing_1, Y_Testing_1, time_scale_size)
+
+                            print(Y_Training)
+
+                            encoder1 = LabelEncoder()
+                            encoder1.fit(Y_Training)
+                            encoded_Y1 = encoder1.transform(Y_Training)
+                            # convert integers to dummy variables (i.e. one hot encoded)
+                            Y_Training = np_utils.to_categorical(encoded_Y1)
+
+                            encoder2 = LabelEncoder()
+                            encoder2.fit(Y_Testing)
+                            encoded_Y2 = encoder2.transform(Y_Testing)
+                            # convert integers to dummy variables (i.e. one hot encoded)
+                            Y_Testing = np_utils.to_categorical(encoded_Y2)
+
+
                             print(X_Training.shape)
                             lstm_object = LSTM(lstm_size, input_length=len(X_Training[0]), input_dim=33)
                             print('Build model...' + 'Window Size is ' + str(window_size) + ' LSTM Size is ' + str(
@@ -280,11 +327,11 @@ def Main(Method_Dict,filename,window_size_label,window_size=0,time_scale_size=0)
                             model = Sequential()
 
                             model.add(lstm_object)  # X.shape is (samples, timesteps, dimension)
-                            model.add(Dense(output_dim=2))
+                            model.add(Dense(output_dim=4))
                             model.add(Activation("sigmoid"))
-                            model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
+                            model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
 
-                            model.fit(X_Training, Y_Training, batch_size=batch_size, nb_epoch=20)
+                            model.fit(X_Training, Y_Training, batch_size=batch_size, nb_epoch=10)
                             result = model.predict(X_Testing, batch_size=batch_size)
 
                             del model
@@ -349,7 +396,15 @@ def Main(Method_Dict,filename,window_size_label,window_size=0,time_scale_size=0)
                     #negative_=Training_Data[Training_Data[:,-1]==negative_sign]
                     #print("IR is :"+str(float(len(negative_))/len(positive_)))
 
+                    print("1111111111111111111111111111111111111")
+                    print(result)
+                    print("2222222222222222222222222222222222222")
+                    print(Y_Testing)
 
+
+                    """
+                    print("HAHAHAHHAHAHAHH")
+                    print(MyEvaluation(Y_Testing,result))
                     Output=[]
                     if len(result)==len(Y_Testing):
                         for tab in range(len(Y_Testing)):
@@ -377,9 +432,10 @@ def Main(Method_Dict,filename,window_size_label,window_size=0,time_scale_size=0)
                     #g_mean=np.sqrt(float(ac_positive*ac_negative)/(len(np.array(Y_Testing)[np.array(Y_Testing)==positive_sign])*len(np.array(Y_Testing)[np.array(Y_Testing)==negative_sign])))
                     #precision = ACC_A
                     #recall = float(ac_positive)/list(Y_Testing).count(positive_sign)
-                    ACC = round(float(ac_positive+ac_negative)/len(Output),5)
+                    #ACC = round(float(ac_positive+ac_negative)/len(Output),5)
                     #f1_score = round((2*precision*recall)/(precision+recall),5)
-
+                    """
+                    ACC = MyEvaluation(Y_Testing,result)
 
                     #cross_folder_acc_r_list.append(ACC_R*100)
                     #cross_folder_acc_a_list.append(ACC_A*100)
@@ -543,7 +599,9 @@ if __name__=='__main__':
     negative_sign=1
     input_data_path =os.getcwd()
     Normalization_Method = "_L2norm"
-    window_size_label_list = ['true','false']
+    #window_size_label_list = ['true','false']
+    window_size_label_list = ['true']
+
     #window_size_list = [10,20,30,40,50,60]
     window_size_list = [40]
     filenamelist=os.listdir(input_data_path)
@@ -560,8 +618,8 @@ if __name__=='__main__':
         for lstm_size in lstm_size_list:
             for window_size_label in window_size_label_list:
                 if window_size_label == 'true':
-                    #Method_Dict={"LSTM":0}
-                    Method_Dict = {"LSTM": 0, "AdaBoost": 1, "DT": 2, "SVM": 3, "LR": 4, "KNN": 5}
+                    Method_Dict={"LSTM":0}
+                    #Method_Dict = {"LSTM": 0, "AdaBoost": 1, "DT": 2, "SVM": 3, "LR": 4, "KNN": 5}
                     for window_size in window_size_list:
                         time_scale_size_list = get_all_subfactors(window_size)
                         output_data_path = os.path.join(os.getcwd(),'Multi_Window_Size_' + str(window_size) + '_LS_' + str(lstm_size)+Normalization_Method)
