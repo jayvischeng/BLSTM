@@ -21,6 +21,7 @@ from sklearn.metrics import roc_auc_score
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn import svm,preprocessing,linear_model
 from sklearn.ensemble import GradientBoostingClassifier,AdaBoostClassifier,RandomForestClassifier
+
 def get_auc(arr_score, arr_label, pos_label):
     score_label_list = []
     for index in xrange(len(arr_score)):
@@ -46,9 +47,11 @@ def get_auc(arr_score, arr_label, pos_label):
     A += trapezoid_area(fp, lastfp, tp, lasttp)
     A /= (fp * tp)
     return A
+
 def trapezoid_area(x1, x2, y1, y2):
     delta = abs(x2 - x1)
     return delta * 0.5 * (y1 + y2)
+
 def LoadData(input_data_path,filename):
     with open(os.path.join(input_data_path,filename)) as fin:
         if filename == 'sonar.dat':
@@ -160,7 +163,23 @@ def Convergge(X_Training,Y_Training,time_scale_size):
             TEMP_Value = TEMP_Value/time_scale_size
             TEMP_XData[tab1].append(list(TEMP_Value[0]))
     return  np.array(TEMP_XData),Y_Training
-
+def Add_Noise(Ratio,Data):
+    w = 0.5
+    X = Data[:,:-1]
+    Y = Data[:,-1]
+    Std_List = X.std(axis=0,ddof=0)
+    N = int(Ratio*len(Data))
+    Noise = []
+    for tab1 in range(N):
+        Base_Instance_Index = random.randint(0,len(Data)-1)
+        Base_Instance = Data[Base_Instance_Index]
+        Noise.append([])
+        for tab2 in range(len(Std_List)):
+            temp = random.uniform(Std_List[tab2]*-1,Std_List[tab2])
+            Noise[tab1].append(float(Base_Instance[tab2]+temp/w))
+        Noise[tab1].append(Base_Instance[-1])
+    Noise = np.array(Noise)
+    return np.concatenate((Data,Noise),axis=0)
 def Main(Method_Dict,filename,window_size_label,window_size=0,time_scale_size=0):
     global lstm_size,positive_sign,negative_sign,input_data_path,output_data_path,Normalization_Method
     if Normalization_Method == "_Std":
@@ -172,7 +191,7 @@ def Main(Method_Dict,filename,window_size_label,window_size=0,time_scale_size=0)
 
     Data_=LoadData(input_data_path,filename)
     cross_folder = 3
-
+    #Data_ = Add_Noise(0.1,Data_)
     #Pos_Data=Data_[Data_[:,-1]!=negative_sign]
     #Neg_Data=Data_[Data_[:,-1]==negative_sign]
     PositiveIndex = returnPositiveIndex(Data_,negative_sign)
@@ -321,12 +340,13 @@ def Main(Method_Dict,filename,window_size_label,window_size=0,time_scale_size=0)
 
 
                             print(X_Training.shape)
-                            lstm_object = LSTM(lstm_size, input_length=len(X_Training[0]), input_dim=33)
+                            lstm_object = LSTM(100, input_length=len(X_Training[0]), input_dim=33)
                             print('Build model...' + 'Window Size is ' + str(window_size) + ' LSTM Size is ' + str(
                                 lstm_size) + " Time Scale is " + str(time_scale_size))
                             model = Sequential()
 
                             model.add(lstm_object)  # X.shape is (samples, timesteps, dimension)
+                            model.add(Dense(20,100))
                             model.add(Dense(output_dim=4))
                             model.add(Activation("sigmoid"))
                             model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
@@ -401,41 +421,40 @@ def Main(Method_Dict,filename,window_size_label,window_size=0,time_scale_size=0)
                     print("2222222222222222222222222222222222222")
                     print(Y_Testing)
 
+                    if methodLabel == 0:
+                        ACC = MyEvaluation(Y_Testing, result)
+                    else:
 
-                    """
-                    print("HAHAHAHHAHAHAHH")
-                    print(MyEvaluation(Y_Testing,result))
-                    Output=[]
-                    if len(result)==len(Y_Testing):
-                        for tab in range(len(Y_Testing)):
-                            Output.append(int(round(result[tab])))
-                    else:print("Error!")
+                        Output=[]
+                        if len(result)==len(Y_Testing):
+                            for tab in range(len(Y_Testing)):
+                                Output.append(int(round(result[tab])))
+                        else:print("Error!")
 
-                    ac_positive=0
-                    ac_negative=0
-                    for tab in range(len(Output)):
-                        if Output[tab]==int(Y_Testing[tab]):
-                            if Output[tab]==negative_sign:
-                                ac_negative += 1
-                            else:
-                                ac_positive += 1
-                    try:
-                        ACC_R = float(ac_negative)/Output.count(negative_sign)
-                    except:
-                        ACC_R = float(ac_negative)*100/(Output.count(negative_sign)+1)
-                    #try:
-                        #ACC_A = float(ac_positive)/Output.count(positive_sign)
-                    #except:
-                        #ACC_A = float(ac_positive)*100/(Output.count(positive_sign)+1)
+                        ac_positive=0
+                        ac_negative=0
+                        for tab in range(len(Output)):
+                            if Output[tab]==int(Y_Testing[tab]):
+                                if Output[tab]==negative_sign:
+                                    ac_negative += 1
+                                else:
+                                    ac_positive += 1
+                        try:
+                            ACC_R = float(ac_negative)/Output.count(negative_sign)
+                        except:
+                            ACC_R = float(ac_negative)*100/(Output.count(negative_sign)+1)
+                        #try:
+                            #ACC_A = float(ac_positive)/Output.count(positive_sign)
+                        #except:
+                            #ACC_A = float(ac_positive)*100/(Output.count(positive_sign)+1)
 
-                    #auc = roc_auc_score(Y_Testing,Output)
-                    #g_mean=np.sqrt(float(ac_positive*ac_negative)/(len(np.array(Y_Testing)[np.array(Y_Testing)==positive_sign])*len(np.array(Y_Testing)[np.array(Y_Testing)==negative_sign])))
-                    #precision = ACC_A
-                    #recall = float(ac_positive)/list(Y_Testing).count(positive_sign)
-                    #ACC = round(float(ac_positive+ac_negative)/len(Output),5)
-                    #f1_score = round((2*precision*recall)/(precision+recall),5)
-                    """
-                    ACC = MyEvaluation(Y_Testing,result)
+                        #auc = roc_auc_score(Y_Testing,Output)
+                        #g_mean=np.sqrt(float(ac_positive*ac_negative)/(len(np.array(Y_Testing)[np.array(Y_Testing)==positive_sign])*len(np.array(Y_Testing)[np.array(Y_Testing)==negative_sign])))
+                        #precision = ACC_A
+                        #recall = float(ac_positive)/list(Y_Testing).count(positive_sign)
+                        ACC = round(float(ac_positive+ac_negative)/len(Output),5)
+                        #f1_score = round((2*precision*recall)/(precision+recall),5)
+
 
                     #cross_folder_acc_r_list.append(ACC_R*100)
                     #cross_folder_acc_a_list.append(ACC_A*100)
@@ -544,6 +563,7 @@ def Main(Method_Dict,filename,window_size_label,window_size=0,time_scale_size=0)
             #Deviation_F1_list[eachMethod+"_TF_"+str(Top_K)].append(deviation_f1_score)
 
 
+
             #ACC_R_list[eachMethod].append(Compute_average_list(Temp_SubFeature_ACC_R_list[eachMethod+"_TF_"+str(Top_K)]))
             #ACC_A_list[eachMethod].append(Compute_average_list(Temp_SubFeature_ACC_A_list[eachMethod+"_TF_"+str(Top_K)]))
             ACC_list[eachMethod].append(Compute_average_list(Temp_SubFeature_ACC_list[eachMethod+"_TF_"+str(Top_K)]))
@@ -565,7 +585,7 @@ def Main(Method_Dict,filename,window_size_label,window_size=0,time_scale_size=0)
     #Write_Out(output_data_path,filename,time_scale_size,G_mean_list,"G_mean")
     #Write_Out(output_data_path,filename,time_scale_size,Temp_SubFeature_G_mean_list,"SubFeature_G_mean",Deviation_G_mean_list)
 
-    Write_Out(output_data_path,filename,time_scale_size,ACC_list,"ACC")
+    Write_Out(output_data_path,filename+"_111",time_scale_size,ACC_list,"ACC")
     #Write_Out(output_data_path,filename,time_scale_size,Temp_SubFeature_ACC_list,"SubFeature_ACC",Deviation_ACC_list)
     #Write_Out(output_data_path,filename,time_scale_size,F1_list,"F1_score")
     #Write_Out(output_data_path,filename,time_scale_size,Temp_SubFeature_F1_list,"SubFeature_F1_score",Deviation_F1_list)
@@ -603,7 +623,7 @@ if __name__=='__main__':
     window_size_label_list = ['true']
 
     #window_size_list = [10,20,30,40,50,60]
-    window_size_list = [40]
+    window_size_list = [20]
     filenamelist=os.listdir(input_data_path)
     lstm_size_list = [25]
 
@@ -618,8 +638,8 @@ if __name__=='__main__':
         for lstm_size in lstm_size_list:
             for window_size_label in window_size_label_list:
                 if window_size_label == 'true':
-                    Method_Dict={"LSTM":0}
-                    #Method_Dict = {"LSTM": 0, "AdaBoost": 1, "DT": 2, "SVM": 3, "LR": 4, "KNN": 5}
+                    #Method_Dict={"LSTM":0}
+                    Method_Dict = {"LSTM": 0, "AdaBoost": 1, "DT": 2, "SVM": 3, "LR": 4, "KNN": 5}
                     for window_size in window_size_list:
                         time_scale_size_list = get_all_subfactors(window_size)
                         output_data_path = os.path.join(os.getcwd(),'Multi_Window_Size_' + str(window_size) + '_LS_' + str(lstm_size)+Normalization_Method)

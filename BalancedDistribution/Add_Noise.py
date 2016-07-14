@@ -3,6 +3,7 @@ from sklearn.preprocessing import LabelEncoder
 from keras.utils import np_utils
 import numpy as np
 import pandas
+import random
 from keras.models import Sequential
 from keras.layers import Dense
 from keras.wrappers.scikit_learn import KerasClassifier
@@ -42,26 +43,58 @@ dataset = dataframe.values
 print(dataset.shape)
 X = dataset[:, 0:33].astype(float)
 print(X)
+print(X.mean(axis=0))
+print(X.std(axis=0,ddof=0))
+
+def Add_Noise(Ratio,Data):
+    w = 0.5
+    X = Data[:,:-1]
+    Y = Data[:,-1]
+    Std_List = X.std(axis=0,ddof=0)
+    N = int(Ratio*len(Data))
+    Noise = []
+    for tab1 in range(N):
+        Base_Instance_Index = random.randint(0,len(Data)-1)
+        Base_Instance = Data[Base_Instance_Index]
+        Noise.append([])
+        for tab2 in range(len(Std_List)):
+            temp = random.uniform(Std_List[tab2]*-1,Std_List[tab2])
+            print("------------")
+            print(Base_Instance)
+            print(Base_Instance[tab2])
+            print(temp)
+            print(Noise)
+            print(Noise[tab1])
+            Noise[tab1].append(float(Base_Instance[tab2]+temp/w))
+        Noise[tab1].append(Base_Instance[-1])
+    Noise = np.array(Noise)
+    return np.concatenate((Data,Noise),axis=0)
+
+Data = np.array([[1,1,1,1,100],[2,3,4,5,100],[3,3,3,3,10000]])
+Ratio = 1
+B = Add_Noise(Ratio,Data)
+print(B)
+
+
+
+
+
+
+
+
 
 #columns = list(dataframe.columns.values)
 #columns.pop(-1)
 #print(columns)
-
-
-
-
 # encode class values as integers
-encoder = LabelEncoder()
-encoder.fit(Y)
-encoded_Y = encoder.transform(Y)
+#encoder = LabelEncoder()
+#encoder.fit(Y)
+#encoded_Y = encoder.transform(Y)
 # convert integers to dummy variables (i.e. one hot encoded)
-dummy_y = np_utils.to_categorical(encoded_Y)
-print(dummy_y)
-
-print(len(X[0]))
+#dummy_y = np_utils.to_categorical(encoded_Y)
+#print(dummy_y)
+#print(len(X[0]))
 #lstm_object = LSTM(30, input_length=len(X[0]), input_dim=33)
-
-
 # define baseline model
 def baseline_model():
     # create model
@@ -73,7 +106,6 @@ def baseline_model():
     # Compile model
     model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
     return model
-
 #estimator = KerasClassifier(build_fn=baseline_model, nb_epoch=10, batch_size=200, verbose=0)
 #kfold = KFold(n=len(X), n_folds=3, shuffle=False, random_state=seed)
 #results = cross_val_score(estimator, X, dummy_y, cv=kfold)
