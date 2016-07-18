@@ -103,6 +103,7 @@ if __name__=='__main__':
     global Normalization_Method
     Normalization_Method = "_L2norm"
     filename = "B_C_N_S"
+    marker_style = dict(linestyle=':', color='cornflowerblue', markersize=10)
     if filename == "B_Code_Red_I" or filename == "B_Slammer":
         window_size_list = [10,20,30,40,50]
         y_base = 50
@@ -118,10 +119,18 @@ if __name__=='__main__':
     Evaluation_List = ["ACC_R","ACC_A","ACC_L","Auc","G_mean","F1_score"]
 
     #color_list = ['r','g','b','c','m','y']
-    color_dict = {"KNN":'c',"AdaBoost":'r',"DT":'y',"LR":'m',"SVM":'g',"LSTM":'b'}
+    #color_dict = {"KNN":'c>',"AdaBoost":'r<',"DT":'yo',"LR":'m',"SVM":'g',"LSTM":'b'}
+
+    #color_dict = {"KNN":'cx',"AdaBoost":'rs',"DT":'y>',"LR":'mo',"SVM":'gD',"LSTM":'b*'}
+    color_dict = {"KNN":'cx',"AdaBoost":'r*',"DT":'y>',"LR":'mo',"SVM":'gD',"LSTM":'bs'}
+    method_dict = {"KNN":"KNN","AdaBoost":"Ada.Boost","DT":"DT","LR":"LOGREG","SVM":"SVM","LSTM":"TS-LSTM"}
+    #line_dict = {"KNN":':',"AdaBoost":'-.',"DT":'-.',"LR":'--',"SVM":':',"LSTM":'--'}
+    line_dict = {"KNN":':',"AdaBoost":':',"DT":'--',"LR":'--',"SVM":'-.',"LSTM":'-.'}
+
     Evaluation_Dict,Evaluation_Dict_Max_Time_Scale = Main(filename,window_size_list,lstm_size_list,Evaluation_List)
-    if not os.path.isdir(os.path.join(os.getcwd(),"Images_W_"+Normalization_Method)):
-        os.makedirs(os.path.join(os.getcwd(),"Images_W_"+Normalization_Method))
+
+    if not os.path.isdir(os.path.join(os.getcwd(),"Images_WWW_"+Normalization_Method)):
+        os.makedirs(os.path.join(os.getcwd(),"Images_WWW_"+Normalization_Method))
 
 
     for each_evalk,each_evalv in Evaluation_Dict.items():
@@ -139,9 +148,9 @@ if __name__=='__main__':
             print("For "+eachMethod+": the max "+each_evalk+ " is "+str(round(np.max(Y),1)))
             #print(X)
             #print(Y_max_time_scale)
-            plt.plot(X,Y,color_dict[eachMethod]+"s-",label=eachMethod)
+            plt.plot(X,Y,color_dict[eachMethod]+line_dict[eachMethod],linewidth=3,markersize=8,label=method_dict[eachMethod])
             for i, txt in enumerate(Y_max_time_scale):
-                plt.annotate('('+str(txt)+')', xy=(X[i],Y[i]),xycoords='data',xytext=(X[i],Y[i]),size = 8)
+                plt.annotate('('+str(txt)+')', xy=(X[i],Y[i]),xycoords='data',xytext=(X[i],Y[i]),size = 10)
 
 
             plt.xlim(10,window_size_list[-1]+5)
@@ -158,13 +167,20 @@ if __name__=='__main__':
         elif each_evalk=="ACC_A":
             plt.ylabel("anomaly precision")
         elif each_evalk=="ACC_L":
-            plt.ylabel("accuracy")
+            plt.ylabel("Accuracy")
+        elif each_evalk=="F1_score":
+            plt.ylabel("F-score")
         else:
             plt.ylabel(each_evalk)
         plt.xlabel('Window Size')
         #plt.show()
 
-        plt.savefig(os.path.join(os.path.join(os.getcwd(),"Images_W_"+Normalization_Method),filename+'_'+title+".png"))
+        plt.savefig(os.path.join(os.path.join(os.getcwd(),"Images_WWW_"+Normalization_Method),filename+'_'+title+".png"))
+        #image = plt.imread(os.path.join(os.path.join(os.getcwd(),"Images_W_"+Normalization_Method),filename+'_'+title+".png"))
+        #arr = np.asarray(image)
+        #plt.imshow(arr, cmap='gray')
+        plt.show()
+
 #import matplotlib.rcsetup as rcsetup
 #print(rcsetup.all_backends)
 #import matplotlib

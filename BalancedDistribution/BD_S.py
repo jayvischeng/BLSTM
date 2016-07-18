@@ -93,7 +93,9 @@ def LoadData(input_data_path,filename):
                 #print(each)
                 if val[-1].strip()== negative_flag:
                     val[-1] = negative_sign
-                #else:
+                else:
+                    if val[-1].strip() == '-1.0':
+                        val[-1] = '0'
                     #val[-1] = positive_sign
                 try:
                     val=map(lambda a:float(a),val)
@@ -169,9 +171,7 @@ def MyEvaluation(Y_Testing, Result):
         for tab1 in range(len(Result)):
             temp_result = map(lambda a:int(round(a)),Result[tab1])
             temp_true = map(lambda a:int(round(a)),Y_Testing[tab1])
-            print(type(temp_result))
-            print(temp_result)
-            print(temp_true)
+
             if list(temp_result) == list(temp_true):
                 acc += 1
     return round(float(acc)/len(Result),3)
@@ -228,9 +228,9 @@ def Main(Method_Dict,filename,window_size_label,lstm_size,window_size=0,time_sca
     Pos_Data = Data_[PositiveIndex]
     Neg_Data = Data_[NegativeIndex]
 
-    print(len(Data_[PositiveIndex,-1]))
+    print((Data_[PositiveIndex,-1]))
 
-    print(len(Data_[NegativeIndex,-1]))
+    print((Data_[NegativeIndex,-1]))
 
     Auc_list = {}
     ACC_R_list = {}
@@ -301,7 +301,7 @@ def Main(Method_Dict,filename,window_size_label,lstm_size,window_size=0,time_sca
                 cross_folder_f1_list=[]
 
                 for tab_cross in range(cross_folder):
-
+                    if tab_cross!=2:continue
                     Positive_Data_Index_Training=[]
                     Positive_Data_Index_Testing=[]
                     Negative_Data_Index_Training=[]
@@ -328,7 +328,7 @@ def Main(Method_Dict,filename,window_size_label,lstm_size,window_size=0,time_sca
 
                     #print(Training_Data_Index)
 
-                    Training_Data_Index = map(lambda a:int(a),Training_Data_Index)
+                    #Training_Data_Index = map(lambda a:int(a),Training_Data_Index)
 
                     #print(Training_Data_Index)
 
@@ -340,7 +340,7 @@ def Main(Method_Dict,filename,window_size_label,lstm_size,window_size=0,time_sca
 
                     Testing_Data_Index.sort()
 
-                    Testing_Data_Index = map(lambda a:int(a),Testing_Data_Index)
+                    #Testing_Data_Index = map(lambda a:int(a),Testing_Data_Index)
 
                     Testing_Data = Data_[Testing_Data_Index,:]
 
@@ -376,7 +376,7 @@ def Main(Method_Dict,filename,window_size_label,lstm_size,window_size=0,time_sca
                             model.add(Activation("sigmoid"))
                             model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
 
-                            model.fit(X_Training, Y_Training, batch_size=batch_size, nb_epoch=20)
+                            model.fit(X_Training, Y_Training,validation_data=(X_Testing,Y_Testing), batch_size=batch_size, nb_epoch=100)
                             #history = History()
                             #print("HHHHHHHHHHHHHHHHHHHHHH")
                             #print(history)

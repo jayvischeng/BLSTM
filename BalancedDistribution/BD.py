@@ -496,7 +496,7 @@ if __name__=='__main__':
     Normalization_Method = "_L2norm"
     window_size_label_list = ['true','false']
     #window_size_list = [10,20,30,40,50,60]
-    window_size_list = [10]
+    window_size_list = [40]
     filenamelist=os.listdir(input_data_path)
     lstm_size_list = [25]
 
@@ -511,8 +511,8 @@ if __name__=='__main__':
         for lstm_size in lstm_size_list:
             for window_size_label in window_size_label_list:
                 if window_size_label == 'true':
-                    #Method_Dict={"LSTM":0}
-                    Method_Dict = {"LSTM": 0, "AdaBoost": 1, "DT": 2, "SVM": 3, "LR": 4, "KNN": 5}
+                    Method_Dict={"LSTM":0}
+                    #Method_Dict = {"LSTM": 0, "AdaBoost": 1, "DT": 2, "SVM": 3, "LR": 4, "KNN": 5}
                     for window_size in window_size_list:
                         time_scale_size_list = get_all_subfactors(window_size)
                         output_data_path = os.path.join(os.getcwd(),'Window_Size_' + str(window_size) + '_LS_' + str(lstm_size)+Normalization_Method)

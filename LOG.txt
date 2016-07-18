@@ -1,0 +1,64 @@
+/usr/bin/python2.7 /home/cheng/Dropbox/BLSTM/BalancedDistribution/BD_M.py
+Using Theano backend.
+B_C_N_S.txt is processing---------------------------------------------------------------------------------------------LSTM_Size is 100
+1th Cross Validation is running and the training size is 6800, testing size is 3400......
+For LSTM The Sequence and Time Scale is: 0.209429
+Epoch 1/1
+6750/6750 [==============================] - 30s - loss: 0.2964 - acc: 0.9012
+The Time For LSTM is 0.57322
+2th Cross Validation is running and the training size is 6800, testing size is 3400......
+For LSTM The Sequence and Time Scale is: 0.207318
+Epoch 1/1
+6750/6750 [==============================] - 30s - loss: 0.2660 - acc: 0.9117
+The Time For LSTM is 0.580447
+3th Cross Validation is running and the training size is 6800, testing size is 3400......
+For LSTM The Sequence and Time Scale is: 0.202778
+Epoch 1/1
+6750/6750 [==============================] - 30s - loss: 0.2719 - acc: 0.9083
+The Time For LSTM is 0.573147
+1th Cross Validation is running and the training size is 6800, testing size is 3400......
+Preprocessing For KNN is 0.000184000000019
+The Time For KNN is 0.016154
+2th Cross Validation is running and the training size is 6800, testing size is 3400......
+Preprocessing For KNN is 0.000191000000001
+The Time For KNN is 0.015477
+3th Cross Validation is running and the training size is 6800, testing size is 3400......
+Preprocessing For KNN is 0.000196999999986
+The Time For KNN is 0.014742
+1th Cross Validation is running and the training size is 6800, testing size is 3400......
+Preprocessing For DT is 0.000290000000007
+The Time For DT is 0.000214999999997
+2th Cross Validation is running and the training size is 6800, testing size is 3400......
+Preprocessing For DT is 0.000236999999998
+The Time For DT is 0.000215999999995
+3th Cross Validation is running and the training size is 6800, testing size is 3400......
+Preprocessing For DT is 0.00017600000001
+The Time For DT is 0.000204000000025
+1th Cross Validation is running and the training size is 6800, testing size is 3400......
+Preprocessing For SVM is 0.000177000000008
+The Time For SVM is 0.033843
+2th Cross Validation is running and the training size is 6800, testing size is 3400......
+Preprocessing For SVM is 0.00027399999999
+The Time For SVM is 0.02125
+3th Cross Validation is running and the training size is 6800, testing size is 3400......
+Preprocessing For SVM is 0.000174999999984
+The Time For SVM is 0.024335
+1th Cross Validation is running and the training size is 6800, testing size is 3400......
+Preprocessing For LR is 0.000179000000003
+The Time For LR is 0.000310000000013
+2th Cross Validation is running and the training size is 6800, testing size is 3400......
+Preprocessing For LR is 0.000185000000016
+The Time For LR is 0.000355000000013
+3th Cross Validation is running and the training size is 6800, testing size is 3400......
+Preprocessing For LR is 0.000186000000014
+The Time For LR is 0.000298000000015
+1th Cross Validation is running and the training size is 6800, testing size is 3400......
+Preprocessing For AdaBoost is 0.00018399999999
+The Time For AdaBoost is 0.006461
+2th Cross Validation is running and the training size is 6800, testing size is 3400......
+Preprocessing For AdaBoost is 0.000188000000009
+The Time For AdaBoost is 0.00646600000002
+3th Cross Validation is running and the training size is 6800, testing size is 3400......
+Preprocessing For AdaBoost is 0.000178000000005
+The Time For AdaBoost is 0.00706
+149.894548178
